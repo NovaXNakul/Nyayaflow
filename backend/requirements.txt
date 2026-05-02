@@ -8,3 +8,8 @@ pydantic-settings
 python-dotenv
 PyMuPDF
 openai
+chromadb
+sentence-transformers
+pypdf
+groq
+reportlab

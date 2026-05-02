@@ -1,83 +1,97 @@
+# app/services/llm_service.py
+#
+# LLM gateway — Groq primary, automatic fallback to smaller model.
+# All callers receive a str | None; they must handle None.
+
 import json
 import re
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 import os
 
 load_dotenv(override=True)
 logger = logging.getLogger(__name__)
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_API_KEY   = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL     = os.getenv("GROQ_MODEL",    "llama-3.3-70b-versatile")
 FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", "llama-3.1-8b-instant")
 
-def call_llm(prompt: str, system_prompt: str = "") -> str:
-    groq_key = os.getenv("GROQ_API_KEY")
-    if not groq_key or groq_key == "gsk_replace_me_with_actual_key":
-        raise RuntimeError(f"GROQ_API_KEY is not valid. Current key: {groq_key[:4]}...")
+# Lazy client — created once on first call
+_client: OpenAI | None = None
 
-    client = OpenAI(
-        api_key=groq_key,
-        base_url="https://api.groq.com/openai/v1"
-    )
-        
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        key = os.getenv("GROQ_API_KEY", "")
+        if not key or key.startswith("gsk_replace"):
+            raise RuntimeError(
+                "GROQ_API_KEY is missing or still set to the placeholder value. "
+                "Set it in your .env file."
+            )
+        _client = OpenAI(api_key=key, base_url="https://api.groq.com/openai/v1")
+    return _client
+
+
+def call_llm(prompt: str, system_prompt: str = "") -> str | None:
+    """
+    Call the primary Groq model with automatic fallback.
+    Returns the response text or None on complete failure.
+    """
+    client   = _get_client()
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
-    
-    try:
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            temperature=0,
-            messages=messages
-        )
-        return response.choices[0].message.content
 
-    except Exception as e:
-        logger.warning(f"Primary model {GROQ_MODEL} failed: {e}")
+    for model in (GROQ_MODEL, FALLBACK_MODEL):
         try:
             response = client.chat.completions.create(
-                model=FALLBACK_MODEL,
+                model=model,
                 temperature=0,
-                messages=messages
+                messages=messages,
+                max_tokens=2048,
             )
-            return response.choices[0].message.content
-        except Exception as e2:
-            logger.error(f"Fallback model {FALLBACK_MODEL} also failed: {e2}")
-            return None
+            text = response.choices[0].message.content
+            logger.debug("call_llm (%s): %.150s", model, text)
+            return text
+        except OpenAIError as e:
+            logger.warning("call_llm model=%s failed: %s", model, e)
+        except Exception as e:
+            logger.error("call_llm unexpected error model=%s: %s", model, e)
 
-def generate_summary(text: str) -> dict:
+    logger.error("call_llm: both models failed — returning None")
+    return None
+
+
+def _strip_fences(text: str) -> str:
+    """Remove markdown code fences around JSON responses."""
+    text = text.strip()
+    text = re.sub(r"^```(?:json)?\s*", "", text)
+    text = re.sub(r"\s*```$",          "", text)
+    return text.strip()
+
+
+def generate_summary(text: str) -> dict | None:
     """Generate a structured summary of the court judgment."""
     system_prompt = (
-        "Summarize the court judgment into:\n"
-        "- Key facts\n"
-        "- Court decision\n"
-        "- Required action\n"
-        "- Deadlines\n\n"
-        "Return ONLY valid JSON matching this EXACT structure:\n"
-        "{\n"
-        '  "key_facts": "...",\n'
-        '  "court_decision": "...",\n'
-        '  "required_action": "...",\n'
-        '  "deadlines": "..."\n'
-        "}"
+        "Summarize the court judgment into key facts, court decision, "
+        "required action, and deadlines.\n\n"
+        "Return ONLY valid JSON matching this EXACT structure — no preamble, "
+        "no markdown fences:\n"
+        '{"key_facts": "...", "court_decision": "...", '
+        '"required_action": "...", "deadlines": "..."}'
     )
-    
-    prompt = f"Summarize the following court judgment:\n\n{text[:8000]}"
-    
-    response_text = call_llm(prompt=prompt, system_prompt=system_prompt)
+    response_text = call_llm(
+        prompt=f"Summarize the following court judgment:\n\n{text[:8000]}",
+        system_prompt=system_prompt,
+    )
     if not response_text:
+        logger.error("generate_summary: LLM returned None")
         return None
-        
     try:
-        raw = response_text.strip()
-        if raw.startswith("```"):
-            raw = re.sub(r"^```(?:json)?\s*", "", raw)
-            raw = re.sub(r"\s*```$", "", raw)
-        return json.loads(raw)
+        return json.loads(_strip_fences(response_text))
     except Exception as e:
-        logger.error(f"Failed to parse LLM summary JSON: {e}")
+        logger.error("generate_summary: JSON parse failed: %s\nRaw: %s", e, response_text[:300])
         return None
