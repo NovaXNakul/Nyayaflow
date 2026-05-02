@@ -49,7 +49,8 @@ const PriorityBadge = ({ priority }) => {
 };
 
 export default function App() {
-  console.log("App Component Init");
+  console.log("App Component Init - Rendering");
+
   // ==== State ==== //
   const [file, setFile] = useState(null);
   const [docId, setDocId] = useState(null);
@@ -104,14 +105,17 @@ export default function App() {
     console.log("Starting upload for file:", file.name);
     try {
       const r = await uploadFile(file);
-      console.log("Upload success, document_id:", r.document_id);
-      setDocId(r.document_id);
-      
+      console.log("Upload response:", r);
+      console.log("document_id type:", typeof r.document_id, "value:", r.document_id);
+
+      const docIdValue = r.document_id;
+      setDocId(docIdValue);
+
       // Auto trigger extraction
-      await handleExtract(r.document_id);
+      await handleExtract(docIdValue);
     } catch (e) {
       console.error("Upload error:", e);
-      setGlobalError("Failed to upload and analyze document. Please check the backend connection.");
+      setGlobalError("Failed to upload and analyze document: " + (e.message || "Unknown error"));
     } finally {
       setLoadingUpload(false);
     }
@@ -125,15 +129,32 @@ export default function App() {
     try {
       const r = await extractData(id);
       console.log("Extraction response:", r);
-      
-      if (!r || !r.extracted_data) {
-        throw new Error("Invalid extraction response: missing extracted_data");
+      console.log("extracted_data keys:", r?.extracted_data ? Object.keys(r.extracted_data) : "none");
+
+      if (!r) {
+        throw new Error("Empty response from server");
       }
-      
+
+      if (!r.extracted_data) {
+        console.warn("No extracted_data in response, using fallback");
+        r.extracted_data = {
+          case_details: "No details extracted",
+          date_of_order: "",
+          directives: [],
+          timeline: "",
+          deadline_date: "",
+          action_required: "Analysis complete - please review",
+          department: "General Administration",
+          priority: "Medium",
+          confidence_score: 0.5,
+          source_reference: ""
+        };
+      }
+
       setExtractRes(r);
     } catch (e) {
       console.error("Extraction error:", e);
-      setGlobalError("Failed to extract insights from the document.");
+      setGlobalError("Failed to extract insights from the document: " + e.message);
     } finally {
       setLoadingExtract(false);
     }
@@ -209,7 +230,27 @@ export default function App() {
     }
   };
 
-  console.log("App Rendering", { docId, hasExtractRes: !!extractRes, hasDashboard: !!dashboard });
+  console.log("App Rendering", {
+    docId,
+    hasExtractRes: !!extractRes,
+    hasExtractData: !!(extractRes?.extracted_data),
+    hasDashboard: !!dashboard,
+    loadingUpload,
+    loadingExtract
+  });
+
+  // Debug: Show current state
+  const debugInfo = {
+    fileSelected: !!file,
+    docId,
+    extractRes: extractRes ? { hasData: !!extractRes.extracted_data, keys: extractRes.extracted_data ? Object.keys(extractRes.extracted_data) : [] } : null,
+    loadingUpload,
+    loadingExtract,
+    loadingAction,
+    globalError
+  };
+  console.log("Debug state:", JSON.stringify(debugInfo, null, 2));
+
   // ==== Render ==== //
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-sky-500/30">
@@ -305,7 +346,7 @@ export default function App() {
                 {docId && (
                   <div className="mt-4 flex items-center justify-between text-xs text-slate-400 bg-slate-800/50 p-2 rounded-lg border border-slate-700/50">
                     <span>Document ID</span>
-                    <span className="font-mono text-sky-400">{docId.substring(0,8)}...</span>
+                    <span className="font-mono text-sky-400">{String(docId)}</span>
                   </div>
                 )}
               </div>

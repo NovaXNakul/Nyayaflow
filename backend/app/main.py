@@ -333,7 +333,7 @@ def generate_action(req: ActionRequest):
         doc.action_plan = {"plan": plan, "risk_assessment": risk}
         doc.status = "action_generated"
         db.commit()
-        return {"document_id": doc.id, "action_plan": plan, "risk_assessment": risk}
+        return {"document_id": doc.id, "plan": plan, "risk_assessment": risk}
 
 
 @app.post("/verify")
