@@ -57,4 +57,8 @@ export const verifyData = async (id, decision, payload = null) =>
 
 export const fetchDashboard = async () => (await api.get("/dashboard")).data;
 
+export const fetchCases = async () => (await api.get("/cases")).data;
+
+export const fetchCaseDetails = async (id) => (await api.get(`/case/${id}`)).data;
+
 export const askChat = async (id, question) => (await api.post("/chat", { document_id: id, question })).data;
