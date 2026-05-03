@@ -29,11 +29,117 @@ import {
   generateAction,
   uploadFile,
   verifyData,
+  translateCase,
+  translateFullData
 } from "./api";
 
 // ==== Components ==== //
 
-const PriorityBadge = ({ priority }) => {
+const LABELS = {
+  English: {
+    orderDate: "Order Date",
+    timeline: "Timeline",
+    deadline: "Deadline",
+    department: "Department",
+    recommendedAction: "Recommended Action",
+    executionPlan: "Execution Plan",
+    finalReview: "Final Review",
+    keyDirectives: "Key Directives",
+    askPlaceholder: "Ask a question...",
+    expandDirectives: "Expand all directives...",
+    translateBtn: "Translate",
+    ingestDocument: "Ingest Document",
+    browseFile: "Click to browse or drag file",
+    supportsPdf: "Supports PDF",
+    analyzeDocument: "Analyze New Document",
+    waitingForDocument: "Waiting for Document",
+    generatePlan: "Generate Plan",
+    due: "Due:",
+    evidenceRequired: "Evidence Required:",
+    clickGenerate: "Click generate to create a step-by-step compliance plan.",
+    actionRequiredForm: "Action Required",
+    priorityForm: "Priority",
+    deadlineDateForm: "Deadline Date",
+    departmentForm: "Department",
+    caseSummaryForm: "Case Summary",
+    reject: "Reject",
+    approveSave: "Approve & Save",
+    downloadReport: "Download Report",
+    legalAssistant: "Legal AI Assistant",
+    askQuestions: "Ask questions about the active document",
+    chatPlaceholderText: "Ask about deadlines, penalties, or specific legal clauses.",
+    systemDashboard: "System Dashboard",
+    dashboardOverview: "Overview of all approved cases",
+    totalApproved: "Total Approved",
+    departments: "Departments",
+    highPriority: "High Priority",
+    deadlines: "Deadlines",
+    byDepartment: "By Department",
+    byPriority: "By Priority",
+    waitingDesc: "Upload or select a court decision to see AI-generated insights, recommended actions, and critical deadlines."
+  },
+  Kannada: {
+    orderDate: "ಆದೇಶ ದಿನಾಂಕ",
+    timeline: "ಸಮಯಾವಧಿ",
+    deadline: "ಕೊನೆಯ ದಿನಾಂಕ",
+    department: "ಇಲಾಖೆ",
+    recommendedAction: "ಶಿಫಾರಸು ಮಾಡಿದ ಕ್ರಮ",
+    executionPlan: "ಕಾರ್ಯಗತಗೊಳಿಸುವಿಕೆ ಯೋಜನೆ",
+    finalReview: "ಅಂತಿಮ ಪರಿಶೀಲನೆ",
+    keyDirectives: "ಪ್ರಮುಖ ನಿರ್ದೇಶನಗಳು",
+    askPlaceholder: "ಪ್ರಶ್ನೆ ಕೇಳಿ...",
+    expandDirectives: "ಎಲ್ಲಾ ನಿರ್ದೇಶನಗಳನ್ನು ವಿಸ್ತರಿಸಿ...",
+    translateBtn: "ಅನುವಾದಿಸಿ",
+    ingestDocument: "ದಾಖಲೆಯನ್ನು ಸೇರಿಸಿ",
+    browseFile: "ಬ್ರೌಸ್ ಮಾಡಲು ಅಥವಾ ಎಳೆಯಲು ಕ್ಲಿಕ್ ಮಾಡಿ",
+    supportsPdf: "PDF ಮಾತ್ರ ಬೆಂಬಲಿಸುತ್ತದೆ",
+    analyzeDocument: "ಹೊಸ ದಾಖಲೆಯನ್ನು ವಿಶ್ಲೇಷಿಸಿ",
+    waitingForDocument: "ದಾಖಲೆಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ",
+    generatePlan: "ಯೋಜನೆ ರಚಿಸಿ",
+    due: "ಗಡುವು:",
+    evidenceRequired: "ಸಾಕ್ಷ್ಯ ಅಗತ್ಯವಿದೆ:",
+    clickGenerate: "ಹಂತ-ಹಂತದ ಅನುಸರಣೆ ಯೋಜನೆಯನ್ನು ರಚಿಸಲು ಜನರೇಟ್ ಕ್ಲಿಕ್ ಮಾಡಿ.",
+    actionRequiredForm: "ಕ್ರಮ ಅಗತ್ಯವಿದೆ",
+    priorityForm: "ಆದ್ಯತೆ",
+    deadlineDateForm: "ಗಡುವು ದಿನಾಂಕ",
+    departmentForm: "ಇಲಾಖೆ",
+    caseSummaryForm: "ಪ್ರಕರಣದ ಸಾರಾಂಶ",
+    reject: "ತಿರಸ್ಕರಿಸಿ",
+    approveSave: "ಅನುಮೋದಿಸಿ ಮತ್ತು ಉಳಿಸಿ",
+    downloadReport: "ವರದಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+    legalAssistant: "ಕಾನೂನು ಎಐ ಸಹಾಯಕ",
+    askQuestions: "ಸಕ್ರಿಯ ದಾಖಲೆಯ ಬಗ್ಗೆ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಿ",
+    chatPlaceholderText: "ಗಡುವುಗಳು, ದಂಡಗಳು ಅಥವಾ ನಿರ್ದಿಷ್ಟ ಕಾನೂನು ಷರತ್ತುಗಳ ಬಗ್ಗೆ ಕೇಳಿ.",
+    high: "ಹೆಚ್ಚು",
+    medium: "ಮಧ್ಯಮ",
+    low: "ಕಡಿಮೆ",
+    unknown: "ಅಜ್ಞಾತ",
+    statusApproved: "ಅನುಮೋದಿಸಲಾಗಿದೆ",
+    statusRejected: "ತಿರಸ್ಕರಿಸಲಾಗಿದೆ",
+    statusExtracted: "ಹೊರತೆಗೆಯಲಾಗಿದೆ",
+    statusAction_generated: "ಯೋಜನೆ ಸಿದ್ಧವಾಗಿದೆ",
+    statusUploaded: "ಅಪ್‌ಲೋಡ್ ಮಾಡಲಾಗಿದೆ",
+    activeId: "ಸಕ್ರಿಯ ಐಡಿ",
+    caseHistory: "ಪ್ರಕರಣದ ಇತಿಹಾಸ",
+    noCasesFound: "ಯಾವುದೇ ಪ್ರಕರಣಗಳು ಕಂಡುಬಂದಿಲ್ಲ.",
+    systemOnline: "ಸಿಸ್ಟಮ್ ಆನ್ಲೈನ್",
+    notSpecified: "ನಿರ್ದಿಷ್ಟಪಡಿಸಲಾಗಿಲ್ಲ",
+    awaitingAnalysis: "ವಿಶ್ಲೇಷಣೆಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ",
+    processing: "ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ...",
+    noDirectives: "ಯಾವುದೇ ನಿರ್ದಿಷ್ಟ ನಿರ್ದೇಶನಗಳನ್ನು ಹೊರತೆಗೆಯಲಾಗಿಲ್ಲ.",
+    systemDashboard: "ಸಿಸ್ಟಮ್ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+    dashboardOverview: "ಎಲ್ಲಾ ಅನುಮೋದಿತ ಪ್ರಕರಣಗಳ ಅವಲೋಕನ",
+    totalApproved: "ಒಟ್ಟು ಅನುಮೋದಿಸಲಾಗಿದೆ",
+    departments: "ಇಲಾಖೆಗಳು",
+    highPriority: "ಹೆಚ್ಚಿನ ಆದ್ಯತೆ",
+    deadlines: "ಗಡುವುಗಳು",
+    byDepartment: "ಇಲಾಖಾವಾರು",
+    byPriority: "ಆದ್ಯತೆವಾರು",
+    waitingDesc: "ಎಐ-ರಚಿಸಿದ ಒಳನೋಟಗಳು, ಶಿಫಾರಸು ಮಾಡಿದ ಕ್ರಮಗಳು ಮತ್ತು ನಿರ್ಣಾಯಕ ಗಡುವುಗಳನ್ನು ನೋಡಲು ನ್ಯಾಯಾಲಯದ ತೀರ್ಪನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ ಅಥವಾ ಆಯ್ಕೆ ಮಾಡಿ."
+  }
+};
+
+const PriorityBadge = ({ priority, language = "English" }) => {
   const styles = {
     High: "bg-red-500/10 text-red-500 border-red-500/20",
     Medium: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
@@ -45,10 +151,13 @@ const PriorityBadge = ({ priority }) => {
     Low: <CheckCircle2 size={14} />
   };
   
+  const labelKey = priority ? priority.toLowerCase() : "unknown";
+  const label = LABELS[language]?.[labelKey] || priority || "UNKNOWN";
+  
   return (
     <div className={`px-3 py-1.5 rounded-full text-xs font-semibold border flex items-center gap-1.5 ${styles[priority] || "bg-slate-500/10 text-slate-400 border-slate-500/20"}`}>
       {icon[priority] || <Clock size={14} />}
-      {priority ? priority.toUpperCase() : "UNKNOWN"}
+      {label.toUpperCase()}
     </div>
   );
 };
@@ -83,8 +192,55 @@ export default function App() {
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [loadingCases, setLoadingCases] = useState(false);
   const [loadingChat, setLoadingChat] = useState(false);
+  const [loadingTranslate, setLoadingTranslate] = useState(false);
 
-  // Initial dashboard load
+  // Language & Translation State
+  const [language, setLanguage] = useState("English");
+  const [translatedContent, setTranslatedContent] = useState(null);
+
+  const fetchTranslation = async (caseId, targetLanguage) => {
+    if (!caseId || !targetLanguage) return;
+    try {
+      setLoadingTranslate(true);
+      const result = await translateFullData(caseId, targetLanguage);
+      setTranslatedContent(result);
+    } catch (err) {
+      console.error('Translation failed:', err);
+    } finally {
+      setLoadingTranslate(false);
+    }
+  };
+
+  // Trigger translation whenever the language is switched
+  useEffect(() => {
+    if (docId && extractRes?.status !== 'processing') {
+      fetchTranslation(docId, language);
+    }
+  }, [language, docId, extractRes?.status, actionRes]);
+
+  const handleExtract = async (id) => {
+    setLoadingExtract(true);
+    setGlobalError(null);
+    try {
+      const r = await extractData(id, "English");
+      if (!r || !r.extracted_data) throw new Error("Invalid extraction response");
+      setExtractRes(r);
+      setEditForm(r.extracted_data);
+      if (language === 'Kannada') fetchTranslation(id, 'Kannada');
+    } catch (e) {
+      console.error("Extraction error:", e);
+      setGlobalError("Failed to extract data.");
+    } finally {
+      setLoadingExtract(false);
+    }
+  };
+
+  const stripMarkdown = (text) => {
+    if (!text) return "";
+    return text.replace(/[\*\#\+\-]/g, "").trim();
+  };
+
+  // Initial Load
   useEffect(() => {
     loadDashboard();
     loadCases();
@@ -113,7 +269,7 @@ export default function App() {
       setGlobalError(null);
     } catch (e) {
       console.error(e);
-      setGlobalError("Failed to connect to backend server. Make sure it is running on port 8000.");
+      setGlobalError("Failed to connect to backend server. Make sure it is running on port 8005.");
     }
     setLoadingDashboard(false);
   };
@@ -131,27 +287,27 @@ export default function App() {
   }
 
   const handleSelectCase = async (id) => {
-    setLoadingExtract(true);
-    setGlobalError(null);
+    setLoadingCases(true);
     try {
       const data = await fetchCaseDetails(id);
       setDocId(id);
       setExtractRes({ extracted_data: data.extracted_data, status: data.status });
-      if (data.action_plan) {
-        setActionRes(data.action_plan);
-      } else {
-        setActionRes(null);
-      }
+      if (data.action_plan) setActionRes(data.action_plan);
+      
+      if (language === 'Kannada') fetchTranslation(id, 'Kannada');
+      
       setChatHistory([]);
       if (window.innerWidth < 1024) {
         setIsSidebarOpen(false); // Auto-close on mobile when selecting
       }
-    } catch(e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
       setGlobalError("Failed to load case details.");
+      setActionRes(null);
+    } finally {
+      setLoadingCases(false);
     }
-    setLoadingExtract(false);
-  }
+  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -171,31 +327,16 @@ export default function App() {
     }
   };
 
-  const handleExtract = async (id = docId) => {
-    if (!id) return;
-    setLoadingExtract(true);
-    setGlobalError(null);
-    try {
-      const r = await extractData(id);
-      if (!r) throw new Error("Empty response from server");
-      setExtractRes(r);
-      loadCases();
-    } catch (e) {
-      console.error("Extraction error:", e);
-      setGlobalError("Failed to extract insights from the document: " + e.message);
-    } finally {
-      setLoadingExtract(false);
-    }
-  };
 
   const handleGenerateAction = async () => {
     if (!docId) return;
     setLoadingAction(true);
     setGlobalError(null);
     try {
-      const r = await generateAction(docId);
+      const r = await generateAction(docId, language); // Generate directly in current language
       if (!r || !r.plan) throw new Error("Invalid action plan response");
       setActionRes(r);
+      // No need to fetchTranslation because it's generated directly in the right language
     } catch (e) {
       console.error("Action generation error:", e);
       setGlobalError("Failed to generate action plan.");
@@ -229,6 +370,7 @@ export default function App() {
     }
   };
 
+
   const handleChat = async (e) => {
     e.preventDefault();
     if (!chatQ.trim() || !docId || loadingChat) return;
@@ -239,7 +381,7 @@ export default function App() {
     
     setLoadingChat(true);
     try {
-      const r = await askChat(docId, question);
+      const r = await askChat(docId, question, language);
       if (!r || !r.answer) throw new Error("Invalid chat response");
       setChatHistory(prev => [...prev, { role: 'assistant', content: r.answer }]);
     } catch (err) {
@@ -269,7 +411,40 @@ export default function App() {
     if (diff < 0) return `${Math.abs(diff)} days overdue!`;
     if (diff === 0) return "Due today!";
     return `${diff} days left`;
-  }
+  };
+
+  const getVal = (field, fallback = "") => {
+    // If we have translated content, prioritize it
+    if (translatedContent) {
+      if (field === 'action_required') return translatedContent.recommended_action || fallback;
+      if (field === 'directives') return translatedContent.directives || extractRes?.extracted_data?.directives || [];
+      if (field === 'case_details') return translatedContent.summary || editForm?.case_details || fallback;
+      if (field === 'timeline') return translatedContent.timeline || editForm?.timeline || fallback;
+      if (field === 'deadline_date') return translatedContent.deadline_date || editForm?.deadline_date || fallback;
+      if (field === 'priority') return translatedContent.priority || editForm?.priority || fallback;
+      if (field === 'department') return translatedContent.department || editForm?.department || fallback;
+      if (field === 'action_steps') {
+        return (translatedContent.action_steps && translatedContent.action_steps.length > 0)
+          ? translatedContent.action_steps
+          : (actionRes?.plan?.steps || []);
+      }
+    }
+    if (field === 'action_required') return editForm?.action_required || extractRes?.extracted_data?.action_required || fallback;
+    if (field === 'directives') return extractRes?.extracted_data?.directives || [];
+    if (field === 'case_details') return editForm?.case_details || extractRes?.extracted_data?.case_details || fallback;
+    if (field === 'timeline') return editForm?.timeline || extractRes?.extracted_data?.timeline || fallback;
+    if (field === 'deadline_date') return editForm?.deadline_date || extractRes?.extracted_data?.deadline_date || fallback;
+    if (field === 'priority') return extractRes?.extracted_data?.priority || fallback;
+    if (field === 'department') return editForm?.department || extractRes?.extracted_data?.department || fallback;
+    if (field === 'action_steps') {
+      // If we have a translated plan, use it. Otherwise use the current actionRes plan.
+      if (language === 'Kannada' && translatedContent?.action_steps?.length > 0) {
+        return translatedContent.action_steps;
+      }
+      return actionRes?.plan?.steps || [];
+    }
+    return fallback;
+  };
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-sky-500/30 flex flex-col">
@@ -295,9 +470,24 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4 text-sm font-medium">
+            {/* Language Switcher */}
+            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+              {['English', 'Kannada'].map(lang => {
+                const langLabels = { 'English': 'EN', 'Kannada': 'ಕ' };
+                return (
+                  <button 
+                    key={lang}
+                    onClick={() => { setLanguage(lang); }}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${language === lang ? 'bg-sky-500 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    {langLabels[lang]}
+                  </button>
+                )
+              })}
+            </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700">
               <Activity size={14} className="text-emerald-400" />
-              <span className="text-slate-300 hidden sm:inline">System Online</span>
+              <span className="text-slate-300 hidden sm:inline">{LABELS[language].systemOnline}</span>
             </div>
           </div>
         </div>
@@ -311,33 +501,38 @@ export default function App() {
           ${isSidebarOpen ? 'w-80 translate-x-0' : 'w-80 -translate-x-full md:translate-x-0 md:w-0 md:opacity-0 md:border-none'}`}
         >
           <div className="p-4 border-b border-slate-800 flex justify-between items-center min-w-[320px]">
-            <h2 className="font-semibold text-slate-200 flex items-center gap-2"><FolderOpen size={18} className="text-sky-400"/> Case History</h2>
+            <h2 className="font-semibold text-slate-200 flex items-center gap-2"><FolderOpen size={18} className="text-sky-400"/> {LABELS[language].caseHistory}</h2>
             <button onClick={loadCases} className="text-slate-400 hover:text-white" disabled={loadingCases}>
               <RefreshCcw size={14} className={loadingCases ? "animate-spin" : ""} />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2 min-w-[320px]">
             {cases.length === 0 && !loadingCases && (
-               <div className="text-center text-slate-500 text-sm py-8">No cases found.</div>
+               <div className="text-center text-slate-500 text-sm py-8">{LABELS[language].noCasesFound}</div>
             )}
-            {Array.isArray(cases) && cases.map(c => (
-              <div 
-                key={c.document_id} 
-                onClick={() => handleSelectCase(c.document_id)}
-                className={`p-3 rounded-xl border cursor-pointer transition-colors ${docId === c.document_id ? 'bg-sky-900/20 border-sky-500/50' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="text-sm font-medium text-slate-200 truncate w-40" title={c.file_name}>{c.file_name}</div>
-                  <div className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${c.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : c.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-300'}`}>
-                    {c.status}
+            {Array.isArray(cases) && cases.map(c => {
+              const statusKey = `status${c.status.charAt(0).toUpperCase() + c.status.slice(1)}`;
+              const statusLabel = LABELS[language][statusKey] || c.status;
+              
+              return (
+                <div 
+                  key={c.document_id} 
+                  onClick={() => handleSelectCase(c.document_id)}
+                  className={`p-3 rounded-xl border cursor-pointer transition-colors ${docId === c.document_id ? 'bg-sky-900/20 border-sky-500/50' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="text-sm font-medium text-slate-200 truncate w-40" title={c.file_name}>{c.file_name}</div>
+                    <div className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${c.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : c.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-300'}`}>
+                      {statusLabel}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="text-xs text-slate-400 truncate w-32"><Building2 size={10} className="inline mr-1"/>{c.department}</div>
+                    <PriorityBadge priority={c.priority} language={language} />
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <div className="text-xs text-slate-400 truncate w-32"><Building2 size={10} className="inline mr-1"/>{c.department}</div>
-                  <PriorityBadge priority={c.priority} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </aside>
 
@@ -375,7 +570,7 @@ export default function App() {
                 <div className="relative z-10">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center border border-slate-700 text-sky-400">1</div>
-                    <h2 className="text-lg font-semibold text-white">Ingest Document</h2>
+                    <h2 className="text-lg font-semibold text-white">{LABELS[language].ingestDocument}</h2>
                   </div>
                   
                   <div className="border-2 border-dashed border-slate-700/50 hover:border-sky-500/50 transition-colors rounded-xl p-8 text-center bg-slate-800/20 mb-4">
@@ -391,9 +586,9 @@ export default function App() {
                         <UploadCloud size={24} className="text-sky-400" />
                       </div>
                       <span className="text-sm font-medium text-slate-200">
-                        {file ? file.name : "Click to browse or drag file"}
+                        {file ? file.name : LABELS[language].browseFile}
                       </span>
-                      <span className="text-xs text-slate-500 mt-1">Supports PDF</span>
+                      <span className="text-xs text-slate-500 mt-1">{LABELS[language].supportsPdf}</span>
                     </label>
                   </div>
 
@@ -403,15 +598,15 @@ export default function App() {
                     onClick={handleUpload}
                   >
                     {loadingUpload || loadingExtract ? (
-                      <><Loader2 size={18} className="animate-spin" /> Processing...</>
+                      <><Loader2 size={18} className="animate-spin" /> {LABELS[language].processing}</>
                     ) : (
-                      <><FileText size={18} /> Analyze New Document</>
+                      <><FileText size={18} /> {LABELS[language].analyzeDocument}</>
                     )}
                   </button>
                   
                   {docId && (
                     <div className="mt-4 flex items-center justify-between text-xs text-slate-400 bg-slate-800/50 p-2 rounded-lg border border-slate-700/50">
-                      <span>Active ID</span>
+                      <span>{LABELS[language].activeId}</span>
                       <span className="font-mono text-sky-400">{String(docId)}</span>
                     </div>
                   )}
@@ -428,37 +623,37 @@ export default function App() {
                       <div>
                         <div className="flex items-center gap-2 text-sky-400 mb-2">
                           <AlertTriangle size={18} />
-                          <span className="text-sm font-bold uppercase tracking-wider">Recommended Action</span>
+                          <span className="text-sm font-bold uppercase tracking-wider">{LABELS[language].recommendedAction}</span>
                         </div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-snug line-clamp-4" title={editForm?.action_required || extractRes?.extracted_data?.action_required}>
-                          {editForm?.action_required || extractRes?.extracted_data?.action_required || "Awaiting Analysis"}
+                        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-snug line-clamp-4" title={getVal('action_required')}>
+                          {stripMarkdown(translatedContent?.recommended_action || getVal('action_required', LABELS[language].awaitingAnalysis))}
                         </h2>
                       </div>
                       <div className="shrink-0">
-                        <PriorityBadge priority={editForm?.priority || extractRes?.extracted_data?.priority} />
+                        <PriorityBadge priority={getVal('priority')} language={language} />
                       </div>
                     </div>
     
                     {/* Metrics Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                       <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Calendar size={12}/> Order Date</div>
-                        <div className="font-semibold text-white">{extractRes?.extracted_data?.date_of_order || "—"}</div>
+                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Calendar size={12}/> {LABELS[language].orderDate}</div>
+                        <div className="font-semibold text-white">{translatedContent?.date_of_order || extractRes?.extracted_data?.date_of_order || "—"}</div>
                       </div>
                       <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Clock size={12}/> Timeline</div>
-                        <div className="font-semibold text-white truncate" title={extractRes?.extracted_data?.timeline}>{extractRes?.extracted_data?.timeline || "—"}</div>
+                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Clock size={12}/> {LABELS[language].timeline}</div>
+                        <div className="font-semibold text-white truncate" title={getVal('timeline')}>{stripMarkdown(translatedContent?.timeline || getVal('timeline', "—"))}</div>
                       </div>
                       <div className={`border rounded-xl p-4 relative overflow-hidden ${editForm?.deadline_date && new Date(editForm.deadline_date) < new Date() ? 'bg-red-500/20 border-red-500/50' : editForm?.deadline_date ? 'bg-sky-500/10 border-sky-500/30' : 'bg-slate-800/50 border-slate-700/50'}`}>
                         <div className="text-slate-400 text-xs font-medium mb-1 flex items-center justify-between gap-1.5 relative z-10">
-                          <span className="flex items-center gap-1"><AlertTriangle size={12}/> Deadline</span>
+                          <span className="flex items-center gap-1"><AlertTriangle size={12}/> {LABELS[language].deadline}</span>
                           <span className={`text-[10px] uppercase font-bold tracking-wider ${editForm?.deadline_date && new Date(editForm.deadline_date) < new Date() ? 'text-red-400' : 'text-sky-400'}`}>{getUrgencyText(editForm?.deadline_date)}</span>
                         </div>
-                        <div className={`relative z-10 ${getUrgencyClasses(editForm?.deadline_date)}`}>{editForm?.deadline_date || "Not Specified"}</div>
+                        <div className={`relative z-10 ${getUrgencyClasses(editForm?.deadline_date)}`}>{editForm?.deadline_date || LABELS[language].notSpecified}</div>
                       </div>
                       <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Building2 size={12}/> Department</div>
-                        <div className="font-semibold text-white truncate" title={editForm?.department || extractRes?.extracted_data?.department}>{editForm?.department || extractRes?.extracted_data?.department || "—"}</div>
+                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Building2 size={12}/> {LABELS[language].department}</div>
+                        <div className="font-semibold text-white truncate" title={getVal('department')}>{translatedContent?.department || getVal('department', "—")}</div>
                       </div>
                     </div>
                   </div>
@@ -469,24 +664,26 @@ export default function App() {
                       className="flex items-center justify-between cursor-pointer select-none group"
                       onClick={() => setDirectivesExpanded(!directivesExpanded)}
                     >
-                      <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider group-hover:text-white transition-colors">Key Directives</h3>
-                      <button className="text-slate-400 group-hover:text-white transition-colors p-1 bg-slate-900 rounded border border-slate-800">
-                        {directivesExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                      </button>
+                      <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider group-hover:text-white transition-colors">{LABELS[language].keyDirectives}</h3>
+                      <div className="flex items-center gap-2">
+                        <button className="text-slate-400 group-hover:text-white transition-colors p-1 bg-slate-900 rounded border border-slate-800">
+                          {directivesExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </button>
+                      </div>
                     </div>
                     
-                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${directivesExpanded ? 'max-h-[500px] mt-4 opacity-100' : 'max-h-[80px] mt-3 opacity-80'}`}>
-                      <ul className="space-y-3">
-                        {extractRes?.extracted_data?.directives?.map((d, i) => (
-                          <li key={i} className="flex gap-3 text-sm text-slate-300 leading-relaxed">
-                            <span className="text-sky-500 mt-0.5 shrink-0"><ChevronRight size={16} /></span>
-                            <span className={directivesExpanded ? '' : 'line-clamp-1'}>{d}</span>
-                          </li>
-                        ))}
-                        {(!extractRes?.extracted_data?.directives || extractRes?.extracted_data?.directives?.length === 0) && (
-                          <li className="text-sm text-slate-500 italic">No specific directives extracted.</li>
-                        )}
-                      </ul>
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${directivesExpanded ? 'max-h-[500px] mt-4 opacity-100 overflow-y-auto custom-scrollbar' : 'max-h-[80px] mt-3 opacity-80'}`}>
+                        <ul className="space-y-3">
+                          {getVal('directives').map((d, i) => (
+                            <li key={i} className="flex gap-3 text-sm text-slate-300 leading-relaxed">
+                              <span className="text-sky-500 mt-0.5 shrink-0"><ChevronRight size={16} /></span>
+                              <span className={directivesExpanded ? '' : 'line-clamp-1'}>{translatedContent?.directives?.[i] || stripMarkdown(d)}</span>
+                            </li>
+                          ))}
+                          {getVal('directives').length === 0 && (
+                            <li className="text-sm text-slate-500 italic">{LABELS[language].noDirectives}</li>
+                          )}
+                        </ul>
                     </div>
                     
                     {!directivesExpanded && extractRes?.extracted_data?.directives?.length > 0 && (
@@ -494,7 +691,7 @@ export default function App() {
                         className="text-xs text-sky-400 mt-3 cursor-pointer font-medium hover:text-sky-300 inline-block px-2 py-1 bg-sky-500/10 rounded"
                         onClick={() => setDirectivesExpanded(true)}
                       >
-                        Expand all directives...
+                        {LABELS[language].expandDirectives}
                       </div>
                     )}
                   </div>
@@ -502,8 +699,8 @@ export default function App() {
               ) : (
                 <div className="h-full min-h-[300px] border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/20">
                   <ShieldAlert size={48} className="mb-4 opacity-20" />
-                  <p className="text-lg font-medium text-slate-400">Waiting for Document</p>
-                  <p className="text-sm mt-2 max-w-md">Upload or select a court decision to see AI-generated insights, recommended actions, and critical deadlines.</p>
+                  <p className="text-lg font-medium text-slate-400">{LABELS[language].waitingForDocument}</p>
+                  <p className="text-sm mt-2 max-w-md">{LABELS[language].waitingDesc}</p>
                 </div>
               )}
             </div>
@@ -518,7 +715,7 @@ export default function App() {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center border border-slate-700 text-sky-400">2</div>
-                      <h2 className="text-lg font-semibold text-white">Execution Plan</h2>
+                      <h2 className="text-lg font-semibold text-white">{LABELS[language].executionPlan}</h2>
                     </div>
                     {!actionRes && (
                       <button
@@ -527,30 +724,33 @@ export default function App() {
                         disabled={loadingAction}
                       >
                         {loadingAction ? <Loader2 size={14} className="animate-spin"/> : <Activity size={14}/>}
-                        Generate Plan
+                        {LABELS[language].generatePlan}
                       </button>
                     )}
                   </div>
 
                   {actionRes ? (
                     <div className="space-y-0 relative flex-1 ml-3 border-l-2 border-slate-800 pl-6 pb-4">
-                      {actionRes.plan?.steps?.map((step, i) => (
+                      {getVal('action_steps').map((step, i) => (
                         <div key={i} className="relative mb-6 last:mb-0 group">
                           {/* Timeline dot */}
                           <div className="absolute -left-[35px] top-1 w-4 h-4 rounded-full bg-slate-800 border-2 border-sky-500 z-10 group-hover:scale-125 transition-transform" />
                           
                           <div className="bg-slate-950/50 border border-slate-800 group-hover:border-sky-500/30 transition-colors rounded-xl p-4">
-                            <h3 className="font-semibold text-white mb-2 leading-tight">{step.step}</h3>
+                            <h3 className="font-semibold text-white mb-2 leading-tight">
+                              {/* Use translated content if available, otherwise use the native step from generation */}
+                              {translatedContent?.action_steps?.[i]?.step || stripMarkdown(step.step || step.action)}
+                            </h3>
                             <div className="flex flex-wrap gap-3 text-xs text-slate-400">
                               <span className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded border border-slate-800">
-                                <Building2 size={12}/> {step.owner}
+                                <Building2 size={12}/> {stripMarkdown(step.owner || step.department)}
                               </span>
                               <span className={`flex items-center gap-1 bg-slate-900 px-2 py-1 rounded border border-slate-800 ${getUrgencyClasses(step.due_date)}`}>
-                                <Calendar size={12}/> Due: {step.due_date}
+                                <Calendar size={12}/> {LABELS[language].due} {step.due_date}
                               </span>
                             </div>
                             <p className="text-xs text-slate-500 mt-2 bg-slate-900/50 p-2 rounded border border-slate-800/50">
-                              <span className="font-medium text-slate-400">Evidence Required:</span> {step.evidence_required}
+                              <span className="font-medium text-slate-400">{LABELS[language].evidenceRequired}</span> {stripMarkdown(step.evidence_required)}
                             </p>
                           </div>
                         </div>
@@ -559,7 +759,7 @@ export default function App() {
                   ) : (
                      <div className="flex-1 border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/20">
                       <Activity size={32} className="mb-3 opacity-20" />
-                      <p className="text-sm">Click generate to create a step-by-step compliance plan.</p>
+                      <p className="text-sm">{LABELS[language].clickGenerate}</p>
                     </div>
                   )}
                 </div>
@@ -569,7 +769,7 @@ export default function App() {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center border border-slate-700 text-emerald-400">3</div>
-                      <h2 className="text-lg font-semibold text-white">Final Review</h2>
+                      <h2 className="text-lg font-semibold text-white">{LABELS[language].finalReview}</h2>
                     </div>
                     {extractRes.status && (
                       <div className="text-xs uppercase px-2 py-1 bg-slate-800 rounded text-slate-300 font-bold">
@@ -581,20 +781,20 @@ export default function App() {
                   <div className="flex-1 space-y-4 overflow-y-auto mb-6 pr-2 custom-scrollbar max-h-[400px]">
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-slate-400 mb-1">Action Required</label>
+                        <label className="block text-xs font-medium text-slate-400 mb-1">{LABELS[language].actionRequiredForm}</label>
                         <input 
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all"
-                          value={editForm?.action_required || ""}
+                          value={translatedContent?.recommended_action || getVal('action_required')}
                           onChange={e => setEditForm({...editForm, action_required: e.target.value})}
                         />
                       </div>
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-slate-400 mb-1">Priority</label>
+                          <label className="block text-xs font-medium text-slate-400 mb-1">{LABELS[language].priorityForm}</label>
                           <select 
                             className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none"
-                            value={editForm?.priority || "Medium"}
+                            value={getVal('priority')}
                             onChange={e => setEditForm({...editForm, priority: e.target.value})}
                           >
                             <option value="High">High</option>
@@ -603,30 +803,30 @@ export default function App() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-slate-400 mb-1">Deadline Date</label>
+                          <label className="block text-xs font-medium text-slate-400 mb-1">{LABELS[language].deadlineDateForm}</label>
                           <input 
                             type="date"
                             className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none [color-scheme:dark]"
-                            value={editForm?.deadline_date || ""}
+                            value={getVal('deadline_date')}
                             onChange={e => setEditForm({...editForm, deadline_date: e.target.value})}
                           />
                         </div>
                       </div>
                       
                       <div>
-                        <label className="block text-xs font-medium text-slate-400 mb-1">Department</label>
+                        <label className="block text-xs font-medium text-slate-400 mb-1">{LABELS[language].departmentForm}</label>
                         <input 
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none"
-                          value={editForm?.department || ""}
+                          value={getVal('department')}
                           onChange={e => setEditForm({...editForm, department: e.target.value})}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-400 mb-1">Case Summary</label>
+                        <label className="block text-xs font-medium text-slate-400 mb-1">{LABELS[language].caseSummaryForm}</label>
                         <textarea 
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none resize-none h-24"
-                          value={editForm?.case_details || ""}
+                          value={getVal('case_details')}
                           onChange={e => setEditForm({...editForm, case_details: e.target.value})}
                         />
                       </div>
@@ -640,7 +840,7 @@ export default function App() {
                       disabled={loadingVerify || extractRes?.status === 'rejected'}
                       onClick={() => handleVerify("reject")}
                     >
-                      <XCircle size={18} /> Reject
+                      <XCircle size={18} /> {LABELS[language].reject}
                     </button>
                     <button
                       className="btn-primary bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 flex items-center justify-center gap-2 py-3 disabled:opacity-50"
@@ -648,14 +848,14 @@ export default function App() {
                       onClick={() => handleVerify("approve")}
                     >
                       {loadingVerify ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                      Approve & Save
+                      {LABELS[language].approveSave}
                     </button>
                     {extractRes?.status === 'approved' && (
                       <button
                         className="btn-primary bg-sky-600 hover:bg-sky-500 shadow-sky-600/20 flex items-center justify-center gap-2 py-3 col-span-2 mt-1"
-                        onClick={() => window.open(`http://localhost:8000/download/${docId}`)}
+                        onClick={() => window.open(`http://localhost:8005/download/${docId}`)}
                       >
-                        <FileText size={18} /> Download Report
+                        <FileText size={18} /> {LABELS[language].downloadReport}
                       </button>
                     )}
                   </div>
@@ -673,8 +873,8 @@ export default function App() {
                   <MessageSquare size={16} />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-white leading-tight">Legal AI Assistant</h2>
-                  <p className="text-xs text-slate-400">Ask questions about the active document</p>
+                  <h2 className="font-semibold text-white leading-tight">{LABELS[language].legalAssistant}</h2>
+                  <p className="text-xs text-slate-400">{LABELS[language].askQuestions}</p>
                 </div>
               </div>
 
@@ -682,7 +882,7 @@ export default function App() {
                 {chatHistory.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-slate-500 text-sm text-center">
                     <MessageSquare size={24} className="mb-2 opacity-20" />
-                    <p>Ask about deadlines, penalties,<br/>or specific legal clauses.</p>
+                    <p className="whitespace-pre-line">{LABELS[language].chatPlaceholderText}</p>
                   </div>
                 ) : (
                   chatHistory.map((msg, i) => (
@@ -711,7 +911,7 @@ export default function App() {
               <form onSubmit={handleChat} className="relative mt-auto">
                 <input
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:border-sky-500 outline-none"
-                  placeholder={docId ? "Ask a question..." : "Upload a document first..."}
+                  placeholder={docId ? LABELS[language].askPlaceholder : "Upload a document first..."}
                   value={chatQ}
                   onChange={e => setChatQ(e.target.value)}
                   disabled={!docId || loadingChat}
@@ -730,8 +930,8 @@ export default function App() {
             <div className="lg:col-span-7 panel h-[500px] flex flex-col">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
                 <div>
-                  <h2 className="font-semibold text-white text-lg">System Dashboard</h2>
-                  <p className="text-xs text-slate-400">Overview of all approved cases</p>
+                  <h2 className="font-semibold text-white text-lg">{LABELS[language].systemDashboard}</h2>
+                  <p className="text-xs text-slate-400">{LABELS[language].dashboardOverview}</p>
                 </div>
                 <button 
                   onClick={loadDashboard}
@@ -748,26 +948,26 @@ export default function App() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center">
                       <div className="text-3xl font-bold text-white mb-1">{(dashboard && dashboard.approved_cases) ? dashboard.approved_cases.length : 0}</div>
-                      <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Approved</div>
+                      <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">{LABELS[language].totalApproved}</div>
                     </div>
                     <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center">
                       <div className="text-3xl font-bold text-sky-400 mb-1">{Object.keys((dashboard && dashboard.department_breakdown) || {}).length}</div>
-                      <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Departments</div>
+                      <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">{LABELS[language].departments}</div>
                     </div>
                     <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex flex-col items-center justify-center">
                       <div className="text-3xl font-bold text-red-400 mb-1">{(dashboard && dashboard.priority_breakdown) ? (dashboard.priority_breakdown.High || 0) : 0}</div>
-                      <div className="text-xs font-medium text-red-500/70 uppercase tracking-wider">High Priority</div>
+                      <div className="text-xs font-medium text-red-500/70 uppercase tracking-wider">{LABELS[language].highPriority}</div>
                     </div>
                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex flex-col items-center justify-center">
                       <div className="text-3xl font-bold text-amber-400 mb-1">{(dashboard && dashboard.deadlines) ? dashboard.deadlines.length : 0}</div>
-                      <div className="text-xs font-medium text-amber-500/70 uppercase tracking-wider">Deadlines</div>
+                      <div className="text-xs font-medium text-amber-500/70 uppercase tracking-wider">{LABELS[language].deadlines}</div>
                     </div>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Dept Breakdown */}
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-300 mb-3">By Department</h3>
+                      <h3 className="text-sm font-semibold text-slate-300 mb-3">{LABELS[language].byDepartment}</h3>
                       <div className="space-y-2">
                         {Object.entries(dashboard.department_breakdown || {}).map(([dept, count]) => (
                           <div key={dept} className="flex items-center justify-between bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-sm">
@@ -780,7 +980,7 @@ export default function App() {
 
                     {/* Priority Breakdown */}
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-300 mb-3">By Priority</h3>
+                      <h3 className="text-sm font-semibold text-slate-300 mb-3">{LABELS[language].byPriority}</h3>
                       <div className="space-y-2">
                         {['High', 'Medium', 'Low'].map(p => {
                           const count = dashboard.priority_breakdown?.[p] || 0;

@@ -26,7 +26,7 @@ api.interceptors.response.use(
       throw new Error(`Server error: ${error.response.status} - ${error.response.statusText}`);
     }
     if (error.request) {
-      throw new Error("Network error - could not reach server. Make sure backend is running on port 8000");
+      throw new Error("Network error - could not reach server. Make sure backend is running on port 8005");
     }
     throw error;
   }
@@ -40,15 +40,15 @@ export const uploadFile = async (file) => {
   return response.data;
 };
 
-export const extractData = async (id) => {
+export const extractData = async (id, language = "English") => {
   console.log("Extract called with document_id:", id);
-  const response = await api.post("/extract", { document_id: id });
+  const response = await api.post("/extract", { document_id: id, language });
   console.log("Extract response:", response.data);
   return response.data;
 };
 
-export const generateAction = async (id) => {
-  const response = await api.post("/generate-action", { document_id: id });
+export const generateAction = async (id, language = "English") => {
+  const response = await api.post("/generate-action", { document_id: id, language });
   return response.data;
 };
 
@@ -61,4 +61,14 @@ export const fetchCases = async () => (await api.get("/cases")).data;
 
 export const fetchCaseDetails = async (id) => (await api.get(`/case/${id}`)).data;
 
-export const askChat = async (id, question) => (await api.post("/chat", { document_id: id, question })).data;
+export const askChat = async (id, question, language = "English") => (await api.post("/chat", { document_id: id, question, language })).data;
+
+export const translateCase = async (id, language) => {
+  const response = await api.post(`/translate/${id}`, { language });
+  return response.data;
+};
+
+export const translateFullData = async (caseId, language) => {
+  const response = await api.get(`/translate/${caseId}?language=${language.toLowerCase()}`);
+  return response.data;
+};

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class ChatRequest(BaseModel):
     document_id: int
     question: str
+    language: str = "English"
 
 @router.post("/chat")
 def chat(req: ChatRequest):
@@ -25,6 +26,7 @@ def chat(req: ChatRequest):
         try:
             system_prompt = (
                 "You are a helpful legal AI assistant for a Government Decision Intelligence System. "
+                f"You MUST respond in {req.language}. "
                 "You answer questions based strictly on the provided context (case details, action plan, extracted directives). "
                 "Do NOT hallucinate. If the answer is not in the context, say so. Keep answers concise."
             )

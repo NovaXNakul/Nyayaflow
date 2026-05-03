@@ -7,35 +7,39 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/upload': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
       '/extract': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
       '/generate-action': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
       '/verify': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
       '/dashboard': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
       '/chat': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
       '/cases': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
       '/case': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8005',
+        changeOrigin: true,
+      },
+      '/translate': {
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
       },
     },

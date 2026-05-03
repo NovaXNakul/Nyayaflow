@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database.session import engine, Base
 
+# Import models before creating tables
+from app.models.case_document import CaseDocument
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
@@ -10,7 +13,7 @@ Base.metadata.create_all(bind=engine)
 logging.basicConfig(level=logging.INFO)
 
 # Import routers
-from app.routes import upload, extract, verify, download, dashboard, chat
+from app.routes import upload, extract, verify, download, dashboard, chat, translate
 
 app = FastAPI(title="Court Decision Intelligence System")
 
@@ -28,6 +31,8 @@ app.include_router(verify.router)
 app.include_router(download.router)
 app.include_router(dashboard.router)
 app.include_router(chat.router)
+app.include_router(translate.router)
+print("[DEBUG] Translate router included successfully")
 
 @app.get("/")
 def root():
