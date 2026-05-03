@@ -11,4 +11,6 @@ class CaseDocument(Base):
     extracted_json = Column(JSON, nullable=True)
     action_plan = Column(JSON, nullable=True)
     status = Column(String(50), default="uploaded")
+    created_by = Column(Integer, nullable=True)
+    assigned_to = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

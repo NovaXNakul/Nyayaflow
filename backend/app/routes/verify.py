@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Any, Optional
 from datetime import datetime
@@ -6,6 +6,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.database.session import SessionLocal
 from app.models.case_document import CaseDocument
 from app.services.llm_service import generate_summary
+from app.core.security import get_admin_user
 
 router = APIRouter()
 
@@ -15,7 +16,7 @@ class VerifyRequest(BaseModel):
     payload: Optional[dict[str, Any]] = None
 
 @router.post("/verify")
-def verify(req: VerifyRequest):
+def verify(req: VerifyRequest, current_user=Depends(get_admin_user)):
     with SessionLocal() as db:
         doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
         if not doc:

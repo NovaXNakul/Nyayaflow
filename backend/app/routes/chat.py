@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import json
 import logging
 from app.database.session import SessionLocal
 from app.models.case_document import CaseDocument
+from app.models.user import User
+from app.core.security import get_current_user
 from app.services.llm_service import call_llm
 
 router = APIRouter()
@@ -14,11 +16,15 @@ class ChatRequest(BaseModel):
     question: str
 
 @router.post("/chat")
-def chat(req: ChatRequest):
+def chat(req: ChatRequest, current_user: User = Depends(get_current_user)):
     with SessionLocal() as db:
         doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
         if not doc or not doc.extracted_json:
             raise HTTPException(404, "Document not ready")
+
+        # Check access for officers
+        if current_user.role == "officer" and doc.assigned_to != current_user.id:
+            raise HTTPException(403, "Access denied to this case")
         
         q = req.question.strip()
         

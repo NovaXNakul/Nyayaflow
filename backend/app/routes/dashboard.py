@@ -1,11 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from app.database.session import SessionLocal
 from app.models.case_document import CaseDocument
+from app.models.user import User
+from app.core.security import get_admin_user, get_current_user_optional
 
 router = APIRouter()
 
 @router.get("/dashboard")
-def dashboard():
+def dashboard(current_user: User = Depends(get_admin_user)):
     with SessionLocal() as db:
         approved = db.query(CaseDocument).filter(CaseDocument.status == "approved").all()
         approved_cases = []
@@ -34,9 +36,12 @@ def dashboard():
         }
 
 @router.get("/cases")
-def get_cases():
+def get_cases(current_user: User | None = Depends(get_current_user_optional)):
     with SessionLocal() as db:
-        cases = db.query(CaseDocument).order_by(CaseDocument.created_at.desc()).all()
+        query = db.query(CaseDocument).order_by(CaseDocument.created_at.desc())
+        if current_user and current_user.role == "officer":
+            query = query.filter(CaseDocument.assigned_to == current_user.id)
+        cases = query.all()
         return [
             {
                 "document_id": c.id,
@@ -44,18 +49,25 @@ def get_cases():
                 "status": c.status,
                 "department": (c.extracted_json or {}).get("department", "Unknown"),
                 "priority": (c.extracted_json or {}).get("priority", "Unknown"),
+                "assigned_to": c.assigned_to,
                 "created_at": c.created_at.isoformat() if c.created_at else None,
             }
             for c in cases
         ]
 
 @router.get("/case/{id}")
-def get_case(id: int):
+def get_case(id: int, current_user: User | None = Depends(get_current_user_optional)):
     with SessionLocal() as db:
         doc = db.query(CaseDocument).filter(CaseDocument.id == id).first()
         if not doc:
-            from fastapi import HTTPException
             raise HTTPException(404, "Case not found")
+        if current_user and current_user.role == "officer" and doc.assigned_to != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied to this case")
+
+        assigned_user = None
+        if doc.assigned_to:
+            assigned_user = db.query(User).filter(User.id == doc.assigned_to).first()
+
         return {
             "document_id": doc.id,
             "file_name": doc.filename,
@@ -63,5 +75,7 @@ def get_case(id: int):
             "extracted_data": doc.extracted_json,
             "action_plan": doc.action_plan,
             "verification_status": doc.status,
+            "assigned_to": doc.assigned_to,
+            "assigned_to_name": assigned_user.username if assigned_user else None,
             "created_at": doc.created_at.isoformat() if doc.created_at else None,
         }
