@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+python-multipart
+sqlalchemy
+psycopg2-binary
+pydantic
+pydantic-settings
+python-dotenv
+PyMuPDF
+openai
+chromadb
+sentence-transformers
+pypdf
+groq
+reportlab
