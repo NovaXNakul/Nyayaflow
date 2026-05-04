@@ -59,12 +59,23 @@ def extract(req: ExtractRequest):
         doc.extracted_json = extracted
         doc.status        = "extracted"
         db.commit()
-<<<<<<< HEAD
         
+        # ── CRITICAL: push named entities into the RAG entity-anchor chunk ────
+        # Without this, queries like "who is the borrower?" miss the answer
+        # because chunking may have split that sentence at an inconvenient boundary.
+        push_entities_to_index(document_id=doc.id, extracted=extracted)
+
         # Safe similar cases lookup
         similar_cases = []
         try:
-            similar_cases = [{"document_id": d.id, "department": (d.extracted_json or {}).get("department", "Unknown"), "priority": (d.extracted_json or {}).get("priority", "Unknown")} for d in db.query(CaseDocument).filter(CaseDocument.id != doc.id).all()[:3]]
+            similar_cases = [
+                {
+                    "document_id": d.id,
+                    "department": (d.extracted_json or {}).get("department", "Unknown"),
+                    "priority": (d.extracted_json or {}).get("priority", "Unknown"),
+                }
+                for d in db.query(CaseDocument).filter(CaseDocument.id != doc.id).all()[:3]
+            ]
         except Exception as e:
             logger.error(f"Failed to fetch similar cases: {e}")
 
@@ -73,41 +84,16 @@ def extract(req: ExtractRequest):
         if text:
             simplified_text += " ".join(text.split()[:90]) + "..."
         
-=======
-
-        # ── CRITICAL: push named entities into the RAG entity-anchor chunk ────
-        # Without this, queries like "who is the borrower?" miss the answer
-        # because chunking may have split that sentence at an inconvenient boundary.
-        push_entities_to_index(document_id=doc.id, extracted=extracted)
-
-        similar_cases = [
-            {
-                "document_id": d.id,
-                "department":  (d.extracted_json or {}).get("department", "Unknown"),
-                "priority":    (d.extracted_json or {}).get("priority",   "Unknown"),
-            }
-            for d in db.query(CaseDocument)
-                       .filter(CaseDocument.id != doc.id)
-                       .all()[:3]
-        ]
         print(f"Extracted data: {extracted}")
 
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
         return {
             "document_id":      doc.id,
             "status":           doc.status,
             "extraction_method": extraction_method,
-<<<<<<< HEAD
-            "extracted_data": extracted,
-            "highlights": highlights,
-            "similar_cases": similar_cases,
-            "simplified_text": simplified_text,
-=======
             "extracted_data":   extracted,
             "highlights":       highlights,
             "similar_cases":    similar_cases,
-            "simplified_text":  "Simple summary: " + " ".join(text.split()[:90]) + "...",
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
+            "simplified_text":  simplified_text,
         }
 
 
@@ -120,18 +106,10 @@ def generate_action(req: ActionRequest):
             raise HTTPException(404, "Document not extracted")
 
         risk = risk_assessment(doc.raw_text or "")
-<<<<<<< HEAD
-        
+
         # Do not overwrite the LLM-extracted priority with the basic heuristic risk assessment
+        # The LLM priority is more accurate based on the full document content
         
-=======
-
-        updated_json             = dict(doc.extracted_json)
-        updated_json["priority"] = risk["priority"]
-        doc.extracted_json       = updated_json
-        flag_modified(doc, "extracted_json")
-
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
         try:
             plan = generate_action_plan_llm(doc.extracted_json, req.language)
         except Exception as e:

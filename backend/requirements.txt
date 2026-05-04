@@ -8,11 +8,9 @@ pydantic-settings
 python-dotenv
 PyMuPDF
 openai
-<<<<<<< HEAD
 reportlab
 chromadb
 sentence-transformers
 pypdf
 groq
-reportlab
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
+
