@@ -10,7 +10,7 @@ const getBaseUrl = () => {
 
 const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 30000,
+  timeout: 180000, // ✅ increased timeout (3 min)
 });
 
 // ✅ Attach JWT token automatically
