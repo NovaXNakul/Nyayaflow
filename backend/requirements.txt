@@ -9,14 +9,11 @@ email-validator
 python-dotenv
 PyMuPDF
 openai
-<<<<<<< HEAD
 passlib[bcrypt]
 python-jose[cryptography]
 reportlab
-=======
 chromadb
 sentence-transformers
 pypdf
 groq
-reportlab
->>>>>>> origin/dev
+

@@ -46,6 +46,10 @@ _TOP_K = 4   # OPT-3: was 6; 4 chunks keep the prompt tight
 
 class ChatRequest(BaseModel):
     document_id: int
+<<<<<<< HEAD
+    question: str
+    language: str = "English"
+=======
     question:    str
 
 
@@ -215,6 +219,7 @@ def _keyword_answer(question: str, doc: Any) -> str | None:
 @router.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
     t_start = time.perf_counter()
+>>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
 
 <<<<<<< HEAD
 @router.post("/chat")
@@ -237,6 +242,20 @@ def chat(req: ChatRequest, current_user: User = Depends(get_current_user)):
                 "Do NOT hallucinate. If the answer is not in the context, say so. Keep answers concise."
 =======
     with SessionLocal() as db:
+<<<<<<< HEAD
+        doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
+        if not doc or not doc.extracted_json:
+            raise HTTPException(404, "Document not ready")
+        
+        q = req.question.strip()
+        
+        try:
+            system_prompt = (
+                "You are a helpful legal AI assistant for a Government Decision Intelligence System. "
+                f"You MUST respond in {req.language}. "
+                "You answer questions based strictly on the provided context (case details, action plan, extracted directives). "
+                "Do NOT hallucinate. If the answer is not in the context, say so. Keep answers concise."
+=======
         doc = db.query(CaseDocument).filter(
             CaseDocument.id == req.document_id
         ).first()
@@ -263,7 +282,11 @@ def chat(req: ChatRequest, current_user: User = Depends(get_current_user)):
                 total_chunks_retrieved=0,
                 retrieval_mode="fallback",
                 latency_ms=elapsed,
+<<<<<<< nakul
 >>>>>>> origin/dev
+=======
+>>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
+>>>>>>> dev
             )
 
         # ── STAGE 1: Retrieval  (OPT-1: no HyDE — use raw question) ──────────

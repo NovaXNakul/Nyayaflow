@@ -40,9 +40,13 @@ api.interceptors.response.use(
     }
 
     if (error.request) {
+<<<<<<< nakul
       throw new Error(
         "Network error - backend not reachable. Make sure server is running on http://127.0.0.1:8000"
       );
+=======
+      throw new Error("Network error - could not reach server. Make sure backend is running on port 8005");
+>>>>>>> dev
     }
 
     throw error;
@@ -148,6 +152,7 @@ export const uploadFile = async (file) => {
   return response.data;
 };
 
+<<<<<<< nakul
 export const extractData = async (id) => {
   const response = await api.post("/extract", { document_id: id });
   return response.data;
@@ -157,6 +162,17 @@ export const generateAction = async (id) => {
   const response = await api.post("/generate-action", {
     document_id: id,
   });
+=======
+export const extractData = async (id, language = "English") => {
+  console.log("Extract called with document_id:", id);
+  const response = await api.post("/extract", { document_id: id, language });
+  console.log("Extract response:", response.data);
+  return response.data;
+};
+
+export const generateAction = async (id, language = "English") => {
+  const response = await api.post("/generate-action", { document_id: id, language });
+>>>>>>> dev
   return response.data;
 };
 
@@ -182,6 +198,7 @@ export const fetchDashboard = async () => {
 // 🤖 CHAT (RAG)
 //
 
+<<<<<<< nakul
 export const askChat = async (id, question) => {
   const response = await api.post("/chat", {
     document_id: id,
@@ -189,3 +206,16 @@ export const askChat = async (id, question) => {
   });
   return response.data;
 };
+=======
+export const askChat = async (id, question, language = "English") => (await api.post("/chat", { document_id: id, question, language })).data;
+
+export const translateCase = async (id, language) => {
+  const response = await api.post(`/translate/${id}`, { language });
+  return response.data;
+};
+
+export const translateFullData = async (caseId, language) => {
+  const response = await api.get(`/translate/${caseId}?language=${language.toLowerCase()}`);
+  return response.data;
+};
+>>>>>>> dev

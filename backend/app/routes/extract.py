@@ -20,15 +20,17 @@ logger = logging.getLogger(__name__)
 
 class ExtractRequest(BaseModel):
     document_id: int
+    language: str = "English"
 
 
 class ActionRequest(BaseModel):
     document_id: int
+    language: str = "English"
 
 
 @router.post("/extract")
 def extract(req: ExtractRequest):
-    print(f"Extracting document {req.document_id}")
+    print(f"Extracting document {req.document_id} with language {req.language}")
     with SessionLocal() as db:
         doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
         if not doc:
@@ -42,7 +44,7 @@ def extract(req: ExtractRequest):
 
         extraction_method = "llm"
         try:
-            extracted = llm_extract(text)
+            extracted = llm_extract(text, req.language)
             source_ref = extracted.get("source_reference", "page 1")
             highlights = [
                 {"field": "directive", "text": d, "source_reference": source_ref}
@@ -57,22 +59,31 @@ def extract(req: ExtractRequest):
         doc.extracted_json = extracted
         doc.status        = "extracted"
         db.commit()
-
+        
         # ── CRITICAL: push named entities into the RAG entity-anchor chunk ────
         # Without this, queries like "who is the borrower?" miss the answer
         # because chunking may have split that sentence at an inconvenient boundary.
         push_entities_to_index(document_id=doc.id, extracted=extracted)
 
-        similar_cases = [
-            {
-                "document_id": d.id,
-                "department":  (d.extracted_json or {}).get("department", "Unknown"),
-                "priority":    (d.extracted_json or {}).get("priority",   "Unknown"),
-            }
-            for d in db.query(CaseDocument)
-                       .filter(CaseDocument.id != doc.id)
-                       .all()[:3]
-        ]
+        # Safe similar cases lookup
+        similar_cases = []
+        try:
+            similar_cases = [
+                {
+                    "document_id": d.id,
+                    "department": (d.extracted_json or {}).get("department", "Unknown"),
+                    "priority": (d.extracted_json or {}).get("priority", "Unknown"),
+                }
+                for d in db.query(CaseDocument).filter(CaseDocument.id != doc.id).all()[:3]
+            ]
+        except Exception as e:
+            logger.error(f"Failed to fetch similar cases: {e}")
+
+        # Safe simplified text generation
+        simplified_text = "Simple summary: "
+        if text:
+            simplified_text += " ".join(text.split()[:90]) + "..."
+        
         print(f"Extracted data: {extracted}")
 
         return {
@@ -82,12 +93,13 @@ def extract(req: ExtractRequest):
             "extracted_data":   extracted,
             "highlights":       highlights,
             "similar_cases":    similar_cases,
-            "simplified_text":  "Simple summary: " + " ".join(text.split()[:90]) + "...",
+            "simplified_text":  simplified_text,
         }
 
 
 @router.post("/generate-action")
 def generate_action(req: ActionRequest):
+    print(f"Generating action plan for {req.document_id} in {req.language}")
     with SessionLocal() as db:
         doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
         if not doc or not doc.extracted_json:
@@ -95,13 +107,11 @@ def generate_action(req: ActionRequest):
 
         risk = risk_assessment(doc.raw_text or "")
 
-        updated_json             = dict(doc.extracted_json)
-        updated_json["priority"] = risk["priority"]
-        doc.extracted_json       = updated_json
-        flag_modified(doc, "extracted_json")
-
+        # Do not overwrite the LLM-extracted priority with the basic heuristic risk assessment
+        # The LLM priority is more accurate based on the full document content
+        
         try:
-            plan = generate_action_plan_llm(doc.extracted_json)
+            plan = generate_action_plan_llm(doc.extracted_json, req.language)
         except Exception as e:
             logger.error(f"Action plan generation failed: {e}")
             plan = {

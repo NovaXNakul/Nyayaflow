@@ -17,13 +17,24 @@ if inspector.has_table("case_documents"):
         if "assigned_to" not in existing_columns:
             conn.execute(text("ALTER TABLE case_documents ADD COLUMN assigned_to INTEGER"))
 
+<<<<<<< nakul
+=======
+# Import models before creating tables
+from app.models.case_document import CaseDocument
+
+# Create tables
+>>>>>>> dev
 Base.metadata.create_all(bind=engine)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 
 # Import routers
+<<<<<<< nakul
 from app.routes import upload, extract, verify, download, dashboard, chat, auth, tasks
+=======
+from app.routes import upload, extract, verify, download, dashboard, chat, translate
+>>>>>>> dev
 
 app = FastAPI(title="Court Decision Intelligence System")
 
@@ -41,8 +52,13 @@ app.include_router(verify.router)
 app.include_router(download.router)
 app.include_router(dashboard.router)
 app.include_router(chat.router)
+<<<<<<< nakul
 app.include_router(auth.router)
 app.include_router(tasks.router)
+=======
+app.include_router(translate.router)
+print("[DEBUG] Translate router included successfully")
+>>>>>>> dev
 
 @app.get("/")
 def root():
