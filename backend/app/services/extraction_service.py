@@ -6,6 +6,7 @@
 # the dedicated entity anchor chunk — even if chunking split the raw PDF text
 # at an inconvenient boundary.
 
+from curses import raw
 import json
 import re
 import logging
@@ -99,16 +100,13 @@ def llm_extract(text: str, language: str = "English") -> dict:
     
     # Step 1: Extract in English first for maximum reliability
     system_prompt = (
-<<<<<<< HEAD
-        f"You are a legal document analysis AI specialising in Indian court judgments and government orders.\n"
-        f"Extract the following information from the text. Return ONLY valid JSON.\n\n"
-        "Return ONLY valid JSON with this EXACT structure:\n"
-=======
+
+
         "You are a legal document analysis AI specialising in Indian court "
         "judgments and government orders.\n\n"
         "Return ONLY valid JSON with this EXACT structure — no preamble, "
         "no markdown fences:\n"
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
+
         "{\n"
         '  "case_details": "Brief factual summary of the case",\n'
         '  "date_of_order": "Date found in the document (DD/MM/YYYY)",\n'
@@ -129,12 +127,7 @@ def llm_extract(text: str, language: str = "English") -> dict:
         "relationship markers (S/o, W/o, D/o)."
     )
 
-<<<<<<< HEAD
-    prompt = f"Analyze the following court judgment text and extract the details:\n\n{text[:8000]}"
-    
-=======
     prompt        = f"Extract structured data from this legal document:\n\n{text[:8000]}"
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
     response_text = call_llm(prompt=prompt, system_prompt=system_prompt)
 
     if not response_text:
@@ -142,7 +135,6 @@ def llm_extract(text: str, language: str = "English") -> dict:
 
     parsed = json.loads(_strip_fences(response_text))
 
-<<<<<<< HEAD
     parsed = json.loads(raw)
 
     # Step 2: Translate values if language is not English
@@ -160,18 +152,6 @@ def llm_extract(text: str, language: str = "English") -> dict:
         "action_required": "",
         "department": "",
         "priority": "Medium",
-=======
-    # Apply defaults for missing keys
-    defaults: dict = {
-        "case_details":     "",
-        "date_of_order":    "",
-        "directives":       [],
-        "timeline":         "",
-        "deadline_date":    "",
-        "action_required":  "",
-        "department":       "",
-        "priority":         "Medium",
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
         "confidence_score": 0.0,
         "source_reference": "",
         "borrower":         "",
@@ -189,7 +169,6 @@ def llm_extract(text: str, language: str = "English") -> dict:
     parsed["confidence_score"] = float(parsed["confidence_score"])
     return parsed
 
-<<<<<<< HEAD
 def generate_action_plan_llm(doc_json: dict, language: str = "English") -> dict:
     # Step 1: Generate plan in English
     system_prompt = (
@@ -200,23 +179,6 @@ def generate_action_plan_llm(doc_json: dict, language: str = "English") -> dict:
         '  "steps": [\n'
         '    {"step": "Detailed step description", "owner": "Department or Role", "due_date": "YYYY-MM-DD", "evidence_required": "Document needed"}\n'
         '  ],\n'
-=======
-
-# ══════════════════════════════════════════════════════════════════════════════
-# ACTION PLAN GENERATION
-# ══════════════════════════════════════════════════════════════════════════════
-
-def generate_action_plan_llm(doc_json: dict) -> dict:
-    system_prompt = (
-        "You are a Government workflow AI. Generate a step-by-step action plan "
-        "based on the following case data.\n\n"
-        "Output ONLY valid JSON matching this structure — no preamble, no fences:\n"
-        "{\n"
-        '  "steps": [\n'
-        '    {"step": "Detailed step description", "owner": "Department or Role", '
-        '"due_date": "YYYY-MM-DD", "evidence_required": "Document needed"}\n'
-        "  ],\n"
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
         '  "compliance_notes": "Decision on compliance vs appeal and reasoning",\n'
         '  "escalation_path": "Escalation hierarchy (e.g. Officer -> Head -> Secretary)"\n'
         "}\n"
@@ -233,7 +195,6 @@ def generate_action_plan_llm(doc_json: dict) -> dict:
     response_text = call_llm(prompt=user_content, system_prompt=system_prompt)
     if not response_text:
         raise RuntimeError("LLM action plan generation failed")
-<<<<<<< HEAD
         
     raw = response_text.strip()
     if raw.startswith("```"):
@@ -328,7 +289,6 @@ def translate_structured_data(data: dict, target_lang: str) -> dict:
         return obj
 
     return apply_translations(placeholder_structure)
-=======
 
     return json.loads(_strip_fences(response_text))
 
@@ -365,4 +325,3 @@ def push_entities_to_index(document_id: int, extracted: dict) -> None:
     except Exception as exc:
         # Non-fatal: RAG will still work from raw PDF chunks
         logger.error("push_entities_to_index failed for doc %d: %s", document_id, exc)
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
