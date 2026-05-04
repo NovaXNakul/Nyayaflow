@@ -6,7 +6,6 @@
 # the dedicated entity anchor chunk — even if chunking split the raw PDF text
 # at an inconvenient boundary.
 
-from curses import raw
 import json
 import re
 import logging
