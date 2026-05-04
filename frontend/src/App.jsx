@@ -150,10 +150,14 @@ const PriorityBadge = ({ priority, language = "English" }) => {
     Medium: <Clock size={14} />,
     Low: <CheckCircle2 size={14} />
   };
+<<<<<<< nakul
+
+=======
   
   const labelKey = priority ? priority.toLowerCase() : "unknown";
   const label = LABELS[language]?.[labelKey] || priority || "UNKNOWN";
   
+>>>>>>> dev
   return (
     <div className={`px-3 py-1.5 rounded-full text-xs font-semibold border flex items-center gap-1.5 ${styles[priority] || "bg-slate-500/10 text-slate-400 border-slate-500/20"}`}>
       {icon[priority] || <Clock size={14} />}
@@ -172,14 +176,14 @@ export default function App() {
   const [actionRes, setActionRes] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [cases, setCases] = useState([]);
-  const [globalError, setGlobalError] = useState(null); 
+  const [globalError, setGlobalError] = useState(null);
   const chatScrollRef = useRef(null);
 
   // Form State
   const [editForm, setEditForm] = useState({});
   const [chatQ, setChatQ] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
-  
+
   // UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [directivesExpanded, setDirectivesExpanded] = useState(false);
@@ -300,8 +304,13 @@ export default function App() {
       if (window.innerWidth < 1024) {
         setIsSidebarOpen(false); // Auto-close on mobile when selecting
       }
+<<<<<<< nakul
+    } catch (e) {
+      console.error(e);
+=======
     } catch (err) {
       console.error(err);
+>>>>>>> dev
       setGlobalError("Failed to load case details.");
       setActionRes(null);
     } finally {
@@ -354,7 +363,7 @@ export default function App() {
       await verifyData(docId, decision, (decision === 'edit' || decision === 'approve') ? editForm : null);
       await loadDashboard();
       await loadCases();
-      
+
       // Update extractRes to reflect the new saved data so UI matches
       setExtractRes(prev => ({
         ...prev,
@@ -374,11 +383,11 @@ export default function App() {
   const handleChat = async (e) => {
     e.preventDefault();
     if (!chatQ.trim() || !docId || loadingChat) return;
-    
+
     const question = chatQ;
     setChatQ("");
     setChatHistory(prev => [...prev, { role: 'user', content: question }]);
-    
+
     setLoadingChat(true);
     try {
       const r = await askChat(docId, question, language);
@@ -448,13 +457,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-sky-500/30 flex flex-col">
-      
+
       {/* Top Navigation / Header */}
       <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
               title="Toggle Sidebar"
             >
@@ -468,7 +477,7 @@ export default function App() {
               <p className="text-[10px] text-sky-400 font-medium uppercase tracking-wider mt-0.5 hidden sm:block">GovOS AI Platform</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4 text-sm font-medium">
             {/* Language Switcher */}
             <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
@@ -494,20 +503,46 @@ export default function App() {
       </nav>
 
       <div className="flex flex-1 max-w-[1600px] w-full mx-auto overflow-hidden relative">
-        
+
         {/* Left Sidebar: Case History */}
-        <aside 
+        <aside
           className={`transition-all duration-300 ease-in-out border-r border-slate-800 bg-slate-900/95 md:bg-slate-900/30 flex flex-col h-[calc(100vh-4rem)] absolute md:relative z-40
           ${isSidebarOpen ? 'w-80 translate-x-0' : 'w-80 -translate-x-full md:translate-x-0 md:w-0 md:opacity-0 md:border-none'}`}
         >
           <div className="p-4 border-b border-slate-800 flex justify-between items-center min-w-[320px]">
+<<<<<<< nakul
+            <h2 className="font-semibold text-slate-200 flex items-center gap-2"><FolderOpen size={18} className="text-sky-400" /> Case History</h2>
+=======
             <h2 className="font-semibold text-slate-200 flex items-center gap-2"><FolderOpen size={18} className="text-sky-400"/> {LABELS[language].caseHistory}</h2>
+>>>>>>> dev
             <button onClick={loadCases} className="text-slate-400 hover:text-white" disabled={loadingCases}>
               <RefreshCcw size={14} className={loadingCases ? "animate-spin" : ""} />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2 min-w-[320px]">
             {cases.length === 0 && !loadingCases && (
+<<<<<<< nakul
+              <div className="text-center text-slate-500 text-sm py-8">No cases found.</div>
+            )}
+            {Array.isArray(cases) && cases.map(c => (
+              <div
+                key={c.document_id}
+                onClick={() => handleSelectCase(c.document_id)}
+                className={`p-3 rounded-xl border cursor-pointer transition-colors ${docId === c.document_id ? 'bg-sky-900/20 border-sky-500/50' : 'bg-slate-900 border-slate-800 hover:border-slate-600'}`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="text-sm font-medium text-slate-200 truncate w-40" title={c.file_name}>{c.file_name}</div>
+                  <div className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${c.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : c.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-300'}`}>
+                    {c.status}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-xs text-slate-400 truncate w-32"><Building2 size={10} className="inline mr-1" />{c.department}</div>
+                  <PriorityBadge priority={c.priority} />
+                </div>
+              </div>
+            ))}
+=======
                <div className="text-center text-slate-500 text-sm py-8">{LABELS[language].noCasesFound}</div>
             )}
             {Array.isArray(cases) && cases.map(c => {
@@ -533,12 +568,13 @@ export default function App() {
                 </div>
               );
             })}
+>>>>>>> dev
           </div>
         </aside>
 
         {/* Backdrop for mobile sidebar */}
         {isSidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-30 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
@@ -546,7 +582,7 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 p-4 md:p-6 space-y-8 overflow-y-auto h-[calc(100vh-4rem)] custom-scrollbar min-w-0">
-          
+
           {/* Error Banner */}
           {globalError && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl flex items-center justify-between">
@@ -562,7 +598,7 @@ export default function App() {
 
           {/* ROW 1: Document Ingestion & The Decision Engine Card */}
           <div className="grid lg:grid-cols-12 gap-6 items-start">
-            
+
             {/* Left Column: Upload */}
             <div className="lg:col-span-4 space-y-6">
               <div className="panel relative overflow-hidden group">
@@ -572,7 +608,7 @@ export default function App() {
                     <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center border border-slate-700 text-sky-400">1</div>
                     <h2 className="text-lg font-semibold text-white">{LABELS[language].ingestDocument}</h2>
                   </div>
-                  
+
                   <div className="border-2 border-dashed border-slate-700/50 hover:border-sky-500/50 transition-colors rounded-xl p-8 text-center bg-slate-800/20 mb-4">
                     <input
                       type="file"
@@ -603,7 +639,7 @@ export default function App() {
                       <><FileText size={18} /> {LABELS[language].analyzeDocument}</>
                     )}
                   </button>
-                  
+
                   {docId && (
                     <div className="mt-4 flex items-center justify-between text-xs text-slate-400 bg-slate-800/50 p-2 rounded-lg border border-slate-700/50">
                       <span>{LABELS[language].activeId}</span>
@@ -633,10 +669,22 @@ export default function App() {
                         <PriorityBadge priority={getVal('priority')} language={language} />
                       </div>
                     </div>
-    
+
                     {/* Metrics Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                       <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+<<<<<<< nakul
+                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Calendar size={12} /> Order Date</div>
+                        <div className="font-semibold text-white">{extractRes?.extracted_data?.date_of_order || "—"}</div>
+                      </div>
+                      <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Clock size={12} /> Timeline</div>
+                        <div className="font-semibold text-white truncate" title={extractRes?.extracted_data?.timeline}>{extractRes?.extracted_data?.timeline || "—"}</div>
+                      </div>
+                      <div className={`border rounded-xl p-4 relative overflow-hidden ${editForm?.deadline_date && new Date(editForm.deadline_date) < new Date() ? 'bg-red-500/20 border-red-500/50' : editForm?.deadline_date ? 'bg-sky-500/10 border-sky-500/30' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center justify-between gap-1.5 relative z-10">
+                          <span className="flex items-center gap-1"><AlertTriangle size={12} /> Deadline</span>
+=======
                         <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Calendar size={12}/> {LABELS[language].orderDate}</div>
                         <div className="font-semibold text-white">{translatedContent?.date_of_order || extractRes?.extracted_data?.date_of_order || "—"}</div>
                       </div>
@@ -647,20 +695,26 @@ export default function App() {
                       <div className={`border rounded-xl p-4 relative overflow-hidden ${editForm?.deadline_date && new Date(editForm.deadline_date) < new Date() ? 'bg-red-500/20 border-red-500/50' : editForm?.deadline_date ? 'bg-sky-500/10 border-sky-500/30' : 'bg-slate-800/50 border-slate-700/50'}`}>
                         <div className="text-slate-400 text-xs font-medium mb-1 flex items-center justify-between gap-1.5 relative z-10">
                           <span className="flex items-center gap-1"><AlertTriangle size={12}/> {LABELS[language].deadline}</span>
+>>>>>>> dev
                           <span className={`text-[10px] uppercase font-bold tracking-wider ${editForm?.deadline_date && new Date(editForm.deadline_date) < new Date() ? 'text-red-400' : 'text-sky-400'}`}>{getUrgencyText(editForm?.deadline_date)}</span>
                         </div>
                         <div className={`relative z-10 ${getUrgencyClasses(editForm?.deadline_date)}`}>{editForm?.deadline_date || LABELS[language].notSpecified}</div>
                       </div>
                       <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+<<<<<<< nakul
+                        <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Building2 size={12} /> Department</div>
+                        <div className="font-semibold text-white truncate" title={editForm?.department || extractRes?.extracted_data?.department}>{editForm?.department || extractRes?.extracted_data?.department || "—"}</div>
+=======
                         <div className="text-slate-400 text-xs font-medium mb-1 flex items-center gap-1.5"><Building2 size={12}/> {LABELS[language].department}</div>
                         <div className="font-semibold text-white truncate" title={getVal('department')}>{translatedContent?.department || getVal('department', "—")}</div>
+>>>>>>> dev
                       </div>
                     </div>
                   </div>
 
                   {/* Directives Accordion */}
                   <div className="bg-slate-950/50 rounded-xl p-5 border border-slate-800 mt-auto">
-                    <div 
+                    <div
                       className="flex items-center justify-between cursor-pointer select-none group"
                       onClick={() => setDirectivesExpanded(!directivesExpanded)}
                     >
@@ -671,6 +725,21 @@ export default function App() {
                         </button>
                       </div>
                     </div>
+<<<<<<< nakul
+
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${directivesExpanded ? 'max-h-[500px] mt-4 opacity-100' : 'max-h-[80px] mt-3 opacity-80'}`}>
+                      <ul className="space-y-3">
+                        {extractRes?.extracted_data?.directives?.map((d, i) => (
+                          <li key={i} className="flex gap-3 text-sm text-slate-300 leading-relaxed">
+                            <span className="text-sky-500 mt-0.5 shrink-0"><ChevronRight size={16} /></span>
+                            <span className={directivesExpanded ? '' : 'line-clamp-1'}>{d}</span>
+                          </li>
+                        ))}
+                        {(!extractRes?.extracted_data?.directives || extractRes?.extracted_data?.directives?.length === 0) && (
+                          <li className="text-sm text-slate-500 italic">No specific directives extracted.</li>
+                        )}
+                      </ul>
+=======
                     
                     <div className={`transition-all duration-300 ease-in-out overflow-hidden ${directivesExpanded ? 'max-h-[500px] mt-4 opacity-100 overflow-y-auto custom-scrollbar' : 'max-h-[80px] mt-3 opacity-80'}`}>
                         <ul className="space-y-3">
@@ -684,10 +753,11 @@ export default function App() {
                             <li className="text-sm text-slate-500 italic">{LABELS[language].noDirectives}</li>
                           )}
                         </ul>
+>>>>>>> dev
                     </div>
-                    
+
                     {!directivesExpanded && extractRes?.extracted_data?.directives?.length > 0 && (
-                      <div 
+                      <div
                         className="text-xs text-sky-400 mt-3 cursor-pointer font-medium hover:text-sky-300 inline-block px-2 py-1 bg-sky-500/10 rounded"
                         onClick={() => setDirectivesExpanded(true)}
                       >
@@ -709,6 +779,15 @@ export default function App() {
           {/* ROW 2: Action Plan & Verification */}
           {extractRes && extractRes.extracted_data && (
             <div className="grid lg:grid-cols-2 gap-6 items-start">
+<<<<<<< nakul
+
+              {/* Action Plan Generator */}
+              <div className="panel flex flex-col h-full">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center border border-slate-700 text-sky-400">2</div>
+                    <h2 className="text-lg font-semibold text-white">Execution Plan</h2>
+=======
                 
                 {/* Action Plan Generator */}
                 <div className="panel flex flex-col h-full">
@@ -727,8 +806,38 @@ export default function App() {
                         {LABELS[language].generatePlan}
                       </button>
                     )}
+>>>>>>> dev
                   </div>
+                  {!actionRes && (
+                    <button
+                      className="btn-primary py-1.5 px-3 text-sm flex items-center gap-2"
+                      onClick={handleGenerateAction}
+                      disabled={loadingAction}
+                    >
+                      {loadingAction ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
+                      Generate Plan
+                    </button>
+                  )}
+                </div>
 
+<<<<<<< nakul
+                {actionRes ? (
+                  <div className="space-y-0 relative flex-1 ml-3 border-l-2 border-slate-800 pl-6 pb-4">
+                    {actionRes.plan?.steps?.map((step, i) => (
+                      <div key={i} className="relative mb-6 last:mb-0 group">
+                        {/* Timeline dot */}
+                        <div className="absolute -left-[35px] top-1 w-4 h-4 rounded-full bg-slate-800 border-2 border-sky-500 z-10 group-hover:scale-125 transition-transform" />
+
+                        <div className="bg-slate-950/50 border border-slate-800 group-hover:border-sky-500/30 transition-colors rounded-xl p-4">
+                          <h3 className="font-semibold text-white mb-2 leading-tight">{step.step}</h3>
+                          <div className="flex flex-wrap gap-3 text-xs text-slate-400">
+                            <span className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded border border-slate-800">
+                              <Building2 size={12} /> {step.owner}
+                            </span>
+                            <span className={`flex items-center gap-1 bg-slate-900 px-2 py-1 rounded border border-slate-800 ${getUrgencyClasses(step.due_date)}`}>
+                              <Calendar size={12} /> Due: {step.due_date}
+                            </span>
+=======
                   {actionRes ? (
                     <div className="space-y-0 relative flex-1 ml-3 border-l-2 border-slate-800 pl-6 pb-4">
                       {getVal('action_steps').map((step, i) => (
@@ -752,32 +861,80 @@ export default function App() {
                             <p className="text-xs text-slate-500 mt-2 bg-slate-900/50 p-2 rounded border border-slate-800/50">
                               <span className="font-medium text-slate-400">{LABELS[language].evidenceRequired}</span> {stripMarkdown(step.evidence_required)}
                             </p>
+>>>>>>> dev
                           </div>
+                          <p className="text-xs text-slate-500 mt-2 bg-slate-900/50 p-2 rounded border border-slate-800/50">
+                            <span className="font-medium text-slate-400">Evidence Required:</span> {step.evidence_required}
+                          </p>
                         </div>
+<<<<<<< nakul
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex-1 border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/20">
+                    <Activity size={32} className="mb-3 opacity-20" />
+                    <p className="text-sm">Click generate to create a step-by-step compliance plan.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Verification & Final Review */}
+              <div className="panel flex flex-col h-full bg-gradient-to-br from-slate-900 to-slate-950 border-emerald-500/10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center border border-slate-700 text-emerald-400">3</div>
+                    <h2 className="text-lg font-semibold text-white">Final Review</h2>
+                  </div>
+                  {extractRes.status && (
+                    <div className="text-xs uppercase px-2 py-1 bg-slate-800 rounded text-slate-300 font-bold">
+                      {extractRes.status}
+=======
                       ))}
                     </div>
                   ) : (
                      <div className="flex-1 border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center text-slate-500 p-8 text-center bg-slate-900/20">
                       <Activity size={32} className="mb-3 opacity-20" />
                       <p className="text-sm">{LABELS[language].clickGenerate}</p>
+>>>>>>> dev
                     </div>
                   )}
                 </div>
 
+<<<<<<< nakul
+                <div className="flex-1 space-y-4 overflow-y-auto mb-6 pr-2 custom-scrollbar max-h-[400px]">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Action Required</label>
+                      <input
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all"
+                        value={editForm?.action_required || ""}
+                        onChange={e => setEditForm({ ...editForm, action_required: e.target.value })}
+                      />
+=======
                 {/* Verification & Final Review */}
                 <div className="panel flex flex-col h-full bg-gradient-to-br from-slate-900 to-slate-950 border-emerald-500/10">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center border border-slate-700 text-emerald-400">3</div>
                       <h2 className="text-lg font-semibold text-white">{LABELS[language].finalReview}</h2>
+>>>>>>> dev
                     </div>
-                    {extractRes.status && (
-                      <div className="text-xs uppercase px-2 py-1 bg-slate-800 rounded text-slate-300 font-bold">
-                        {extractRes.status}
-                      </div>
-                    )}
-                  </div>
 
+<<<<<<< nakul
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-400 mb-1">Priority</label>
+                        <select
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none"
+                          value={editForm?.priority || "Medium"}
+                          onChange={e => setEditForm({ ...editForm, priority: e.target.value })}
+                        >
+                          <option value="High">High</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Low">Low</option>
+                        </select>
+=======
                   <div className="flex-1 space-y-4 overflow-y-auto mb-6 pr-2 custom-scrollbar max-h-[400px]">
                     <div className="space-y-3">
                       <div>
@@ -820,19 +977,67 @@ export default function App() {
                           value={getVal('department')}
                           onChange={e => setEditForm({...editForm, department: e.target.value})}
                         />
+>>>>>>> dev
                       </div>
-
                       <div>
+<<<<<<< nakul
+                        <label className="block text-xs font-medium text-slate-400 mb-1">Deadline Date</label>
+                        <input
+                          type="date"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none [color-scheme:dark]"
+                          value={editForm?.deadline_date || ""}
+                          onChange={e => setEditForm({ ...editForm, deadline_date: e.target.value })}
+=======
                         <label className="block text-xs font-medium text-slate-400 mb-1">{LABELS[language].caseSummaryForm}</label>
                         <textarea 
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none resize-none h-24"
                           value={getVal('case_details')}
                           onChange={e => setEditForm({...editForm, case_details: e.target.value})}
+>>>>>>> dev
                         />
                       </div>
                     </div>
-                  </div>
 
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Department</label>
+                      <input
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none"
+                        value={editForm?.department || ""}
+                        onChange={e => setEditForm({ ...editForm, department: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Case Summary</label>
+                      <textarea
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white focus:border-sky-500 outline-none resize-none h-24"
+                        value={editForm?.case_details || ""}
+                        onChange={e => setEditForm({ ...editForm, case_details: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+<<<<<<< nakul
+                {/* Big Action Buttons */}
+                <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-slate-800/50">
+                  <button
+                    className="btn-secondary flex items-center justify-center gap-2 py-3 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 disabled:opacity-50"
+                    disabled={loadingVerify || extractRes?.status === 'rejected'}
+                    onClick={() => handleVerify("reject")}
+                  >
+                    <XCircle size={18} /> Reject
+                  </button>
+                  <button
+                    className="btn-primary bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 flex items-center justify-center gap-2 py-3 disabled:opacity-50"
+                    disabled={loadingVerify || extractRes?.status === 'approved'}
+                    onClick={() => handleVerify("approve")}
+                  >
+                    {loadingVerify ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                    Approve & Save
+                  </button>
+                  {extractRes?.status === 'approved' && (
+=======
                   {/* Big Action Buttons */}
                   <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-slate-800/50">
                     <button
@@ -842,11 +1047,16 @@ export default function App() {
                     >
                       <XCircle size={18} /> {LABELS[language].reject}
                     </button>
+>>>>>>> dev
                     <button
-                      className="btn-primary bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 flex items-center justify-center gap-2 py-3 disabled:opacity-50"
-                      disabled={loadingVerify || extractRes?.status === 'approved'}
-                      onClick={() => handleVerify("approve")}
+                      className="btn-primary bg-sky-600 hover:bg-sky-500 shadow-sky-600/20 flex items-center justify-center gap-2 py-3 col-span-2 mt-1"
+                      onClick={() => window.open(`http://localhost:8000/download/${docId}`)}
                     >
+<<<<<<< nakul
+                      <FileText size={18} /> Download Report
+                    </button>
+                  )}
+=======
                       {loadingVerify ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
                       {LABELS[language].approveSave}
                     </button>
@@ -859,13 +1069,15 @@ export default function App() {
                       </button>
                     )}
                   </div>
+>>>>>>> dev
                 </div>
               </div>
-            )}
-        
+            </div>
+          )}
+
           {/* ROW 3: Chatbot & Global Dashboard */}
           <div className="grid lg:grid-cols-12 gap-6 items-start pb-10">
-            
+
             {/* Chatbot */}
             <div className="lg:col-span-5 panel flex flex-col h-[500px]">
               <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-800">
@@ -882,16 +1094,19 @@ export default function App() {
                 {chatHistory.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-slate-500 text-sm text-center">
                     <MessageSquare size={24} className="mb-2 opacity-20" />
+<<<<<<< nakul
+                    <p>Ask about deadlines, penalties,<br />or specific legal clauses.</p>
+=======
                     <p className="whitespace-pre-line">{LABELS[language].chatPlaceholderText}</p>
+>>>>>>> dev
                   </div>
                 ) : (
                   chatHistory.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                        msg.role === 'user' 
-                          ? 'bg-sky-600 text-white rounded-br-sm' 
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === 'user'
+                          ? 'bg-sky-600 text-white rounded-br-sm'
                           : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-sm'
-                      }`}>
+                        }`}>
                         {msg.content}
                       </div>
                     </div>
@@ -901,8 +1116,8 @@ export default function App() {
                   <div className="flex justify-start">
                     <div className="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
                       <div className="w-2 h-2 bg-sky-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-sky-400 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></div>
-                      <div className="w-2 h-2 bg-sky-400 rounded-full animate-bounce" style={{animationDelay: "0.4s"}}></div>
+                      <div className="w-2 h-2 bg-sky-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                      <div className="w-2 h-2 bg-sky-400 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
                     </div>
                   </div>
                 )}
@@ -916,7 +1131,7 @@ export default function App() {
                   onChange={e => setChatQ(e.target.value)}
                   disabled={!docId || loadingChat}
                 />
-                <button 
+                <button
                   type="submit"
                   disabled={!docId || loadingChat || !chatQ.trim()}
                   className="absolute right-2 top-2 p-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors disabled:opacity-50"
@@ -933,7 +1148,7 @@ export default function App() {
                   <h2 className="font-semibold text-white text-lg">{LABELS[language].systemDashboard}</h2>
                   <p className="text-xs text-slate-400">{LABELS[language].dashboardOverview}</p>
                 </div>
-                <button 
+                <button
                   onClick={loadDashboard}
                   disabled={loadingDashboard}
                   className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"

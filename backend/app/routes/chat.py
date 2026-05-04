@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+=======
 # app/routers/chat.py
 #
 # OPTIMIZED — target latency: 2–5 s
@@ -13,6 +17,7 @@
 
 from __future__ import annotations
 
+>>>>>>> origin/dev
 import json
 import logging
 import time
@@ -23,6 +28,8 @@ from pydantic import BaseModel
 
 from app.database.session import SessionLocal
 from app.models.case_document import CaseDocument
+from app.models.user import User
+from app.core.security import get_current_user
 from app.services.llm_service import call_llm
 from app.services.rag_service import is_entity_query, retrieve_chunks, debug_retrieval
 
@@ -214,6 +221,26 @@ def chat(req: ChatRequest) -> ChatResponse:
     t_start = time.perf_counter()
 >>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
 
+<<<<<<< HEAD
+@router.post("/chat")
+def chat(req: ChatRequest, current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
+        if not doc or not doc.extracted_json:
+            raise HTTPException(404, "Document not ready")
+
+        # Check access for officers
+        if current_user.role == "officer" and doc.assigned_to != current_user.id:
+            raise HTTPException(403, "Access denied to this case")
+        
+        q = req.question.strip()
+        
+        try:
+            system_prompt = (
+                "You are a helpful legal AI assistant for a Government Decision Intelligence System. "
+                "You answer questions based strictly on the provided context (case details, action plan, extracted directives). "
+                "Do NOT hallucinate. If the answer is not in the context, say so. Keep answers concise."
+=======
     with SessionLocal() as db:
 <<<<<<< HEAD
         doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
@@ -255,7 +282,11 @@ def chat(req: ChatRequest) -> ChatResponse:
                 total_chunks_retrieved=0,
                 retrieval_mode="fallback",
                 latency_ms=elapsed,
+<<<<<<< nakul
+>>>>>>> origin/dev
+=======
 >>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
+>>>>>>> dev
             )
 
         # ── STAGE 1: Retrieval  (OPT-1: no HyDE — use raw question) ──────────

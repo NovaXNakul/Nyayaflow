@@ -5,9 +5,12 @@ sqlalchemy
 psycopg2-binary
 pydantic
 pydantic-settings
+email-validator
 python-dotenv
 PyMuPDF
 openai
+passlib[bcrypt]
+python-jose[cryptography]
 reportlab
 chromadb
 sentence-transformers

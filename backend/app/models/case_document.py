@@ -13,4 +13,6 @@ class CaseDocument(Base):
     extracted_json = Column(JSONB if os.getenv("DATABASE_URL", "").startswith("postgre") else JSON, nullable=True)
     action_plan = Column(JSONB if os.getenv("DATABASE_URL", "").startswith("postgre") else JSON, nullable=True)
     status = Column(String(50), default="uploaded")
+    created_by = Column(Integer, nullable=True)
+    assigned_to = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
