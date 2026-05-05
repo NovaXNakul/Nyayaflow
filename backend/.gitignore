@@ -53,3 +53,13 @@ uploads/
 # =========================
 *.zip
 *.tar.gz
+# backend
+backend/chroma_db/
+backend/reports/
+
+# frontend temp
+*.timestamp-*.mjs
+
+# general
+*.bin
+*.pdf

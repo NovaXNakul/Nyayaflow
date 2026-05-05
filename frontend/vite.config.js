@@ -6,6 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/auth': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/upload': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
@@ -36,6 +40,22 @@ export default defineConfig({
       },
       '/case': {
         target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/translate': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/tasks': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/users': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/download': {
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
