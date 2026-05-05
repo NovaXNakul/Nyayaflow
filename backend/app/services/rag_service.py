@@ -4,18 +4,17 @@
 #
 # PERFORMANCE FIXES vs original:
 #   PERF-1  MMR removed entirely  (-10–30 s)
-#           Original MMR called BI_ENCODER.encode() O(k²) times in a loop.
-#           Pure top-k after reranking is just as good for legal Q&A.
 #   PERF-2  Reranker SKIPPED for entity queries  (-5–15 s)
-#           BM25 + keyword scan already surface the exact entity chunk.
-#           Running the cross-encoder on top adds only noise.
 #   PERF-3  candidate_pool reduced 30 → 15  (-2–7 s for non-entity)
-#           15 candidates is sufficient with Okapi BM25 pre-filtering.
 #   PERF-4  Chunk cache (_chunk_cache) avoids collection.get() on every query
-#           collection.get() fetches ALL vectors for a doc — expensive.
 #   PERF-5  Batch embedding in index_document  (faster indexing)
-#           encode(list) is 3–5× faster than per-item encode in a loop.
 #   PERF-6  Per-stage timing at INFO level throughout
+#
+# BUG FIXES vs original:
+#   FIX-1   update_entity_anchor always rebuilds BM25 — previously skipped
+#           when document_id not in _bm25_store (cold restart), so the anchor
+#           was never refreshed in production after a server restart.
+#   FIX-2   rebuild_bm25_from_chroma also warms _chunk_cache on cold start.
 
 from __future__ import annotations
 
@@ -54,8 +53,7 @@ collection    = chroma_client.get_or_create_collection(
 # IN-MEMORY STORES
 # ══════════════════════════════════════════════════════════════════════════════
 
-# PERF-4: chunk text cache — avoids collection.get() on every keyword scan
-_chunk_cache: Dict[int, List[str]]                    = {}
+_chunk_cache: Dict[int, List[str]]                     = {}
 _bm25_store:  Dict[int, Tuple["BM25Index", List[str]]] = {}
 
 
@@ -213,7 +211,7 @@ def legal_sentence_split(text: str) -> List[str]:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CHUNKING  — paragraph-first, sentence-group sub-chunking with overlap
+# CHUNKING
 # ══════════════════════════════════════════════════════════════════════════════
 
 def chunk_text(
@@ -261,7 +259,7 @@ def chunk_text(
                     chunks.append({"text": " ".join(grp), "source": "sentence_group"})
                 i = max(i + 1, j - overlap_sents)
 
-    seen:    set       = set()
+    seen:    set        = set()
     deduped: List[Dict] = []
     for c in chunks:
         key = c["text"][:80]
@@ -285,8 +283,19 @@ _ENTITY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Summary intent — used in chat.py to route to generate_summary
+_SUMMARY_RE = re.compile(
+    r'\b(summari[sz]e|summary|overview|brief|gist|tldr|tl[;\s]?dr|'
+    r'what is this (document|case|judgment|order) about|'
+    r'give me (a |an )?(summary|overview)|explain this (document|case))\b',
+    re.IGNORECASE,
+)
+
 def is_entity_query(query: str) -> bool:
     return bool(_ENTITY_RE.search(query))
+
+def is_summary_query(query: str) -> bool:
+    return bool(_SUMMARY_RE.search(query))
 
 
 def _embed_query(query: str, entity_mode: bool) -> List[float]:
@@ -303,7 +312,7 @@ def _embed_query(query: str, entity_mode: bool) -> List[float]:
         f"Details related to: {query}",
     ]
     import numpy as np
-    vecs = BI_ENCODER.encode(expansions, normalize_embeddings=True)  # batch call
+    vecs = BI_ENCODER.encode(expansions, normalize_embeddings=True)
     avg  = vecs.mean(axis=0)
     return avg.tolist()
 
@@ -326,11 +335,9 @@ def _rrf_fuse(
 def _keyword_scan(document_id: int, query: str, top_k: int = 15) -> List[Tuple[str, float]]:
     """
     PERF-4: Use in-memory chunk cache instead of collection.get() on every call.
-    collection.get() fetches ALL vectors from disk — slow for large documents.
     """
     texts = _chunk_cache.get(document_id)
     if texts is None:
-        # Cold cache — fetch once and store
         try:
             data  = collection.get(where={"document_id": str(document_id)})
             texts = data.get("documents", [])
@@ -362,12 +369,8 @@ def _keyword_scan(document_id: int, query: str, top_k: int = 15) -> List[Tuple[s
 def _rerank(
     query:      str,
     candidates: List[str],
-    max_pairs:  int = 15,   # PERF-3: was 30
+    max_pairs:  int = 15,
 ) -> List[Tuple[str, float]]:
-    """
-    PERF-3: Rerank at most max_pairs candidates (default 15, not 30).
-    Fewer pairs → ~2× faster on CPU with negligible accuracy loss.
-    """
     if not candidates:
         return []
     cands = candidates[:max_pairs]
@@ -392,7 +395,7 @@ def retrieve_chunks(
     document_id:    int,
     query:          str,
     k:              int = 4,
-    candidate_pool: int = 15,   # PERF-3: was 30
+    candidate_pool: int = 15,
 ) -> List[str]:
     """
     Optimised hybrid retrieval pipeline:
@@ -402,10 +405,6 @@ def retrieve_chunks(
       4. RRF fusion
       5. Cross-encoder reranking — SKIPPED for entity queries  (PERF-2)
       6. Pure top-k selection  (PERF-1: MMR removed)
-
-    Typical latency:
-      Entity query  → 0.2–0.5 s  (no reranker)
-      Open query    → 0.5–1.0 s  (reranker on 15 candidates)
     """
     t0 = time.perf_counter()
     entity_mode = is_entity_query(query)
@@ -414,7 +413,6 @@ def retrieve_chunks(
         document_id, k, entity_mode, query,
     )
 
-    # Lazy BM25 rebuild after server restart
     if document_id not in _bm25_store:
         logger.warning("BM25 cold for doc %d — rebuilding from Chroma", document_id)
         rebuild_bm25_from_chroma(document_id)
@@ -474,8 +472,6 @@ def retrieve_chunks(
     # ── 5. Reranking  (PERF-2: skip for entity queries) ──────────────────────
     t5 = time.perf_counter()
     if entity_mode:
-        # BM25 + keyword already nail the exact entity chunk.
-        # Cross-encoder on CPU would add 5–15 s for zero accuracy gain here.
         reranked: List[Tuple[str, float]] = [
             (d, rrf_scores[d]) for d in candidates_sorted
         ]
@@ -486,9 +482,7 @@ def retrieve_chunks(
             reranked = [(d, rrf_scores[d]) for d in candidates_sorted]
         logger.info("  reranker: %.3fs", time.perf_counter() - t5)
 
-    # ── 6. Pure top-k  (PERF-1: MMR removed) ─────────────────────────────────
-    # MMR was calling BI_ENCODER.encode() O(k²) times — major bottleneck.
-    # For legal Q&A, diversity matters far less than precision.
+    # ── 6. Pure top-k ─────────────────────────────────────────────────────────
     final = [doc for doc, _ in reranked[:k]]
 
     logger.info(
@@ -496,6 +490,35 @@ def retrieve_chunks(
         time.perf_counter() - t0, len(final),
     )
     return final
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FULL-DOCUMENT TEXT FOR SUMMARY  (public API)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def get_document_text_for_summary(document_id: int, max_chars: int = 8000) -> str:
+    """
+    Return the full document text concatenated from all non-entity-anchor chunks,
+    ordered by chunk_id. Used by the summary path in chat.py.
+    """
+    try:
+        data = collection.get(
+            where={"document_id": str(document_id)},
+            include=["documents", "metadatas"],
+        )
+        pairs = [
+            (meta.get("chunk_id", 0), doc)
+            for doc, meta in zip(data["documents"], data["metadatas"])
+            if meta.get("type") != "entities"   # skip the anchor chunk
+        ]
+        pairs.sort(key=lambda x: x[0])
+        full_text = "\n\n".join(doc for _, doc in pairs)
+        return full_text[:max_chars]
+    except Exception as exc:
+        logger.error("get_document_text_for_summary failed for doc %d: %s", document_id, exc)
+        # Fall back to chunk cache
+        texts = _chunk_cache.get(document_id, [])
+        return "\n\n".join(t for t in texts if not t.startswith("DOCUMENT ENTITY SUMMARY"))[:max_chars]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -509,7 +532,6 @@ def index_document(
 ) -> int:
     """
     Index a document: ChromaDB embeddings + BM25 + chunk cache.
-
     PERF-5: Batch embedding — encode(list) is 3–5× faster than per-item loop.
     """
     t0 = time.perf_counter()
@@ -520,10 +542,10 @@ def index_document(
     raw_text = load_pdf_text(file_path)
     chunks   = chunk_text(raw_text)
 
-    ids:      List[str]         = []
-    docs:     List[str]         = []
-    metas:    List[Dict]        = []
-    all_texts: List[str]        = []
+    ids:       List[str]  = []
+    docs:      List[str]  = []
+    metas:     List[Dict] = []
+    all_texts: List[str]  = []
 
     for i, chunk in enumerate(chunks):
         t = chunk["text"]
@@ -537,7 +559,7 @@ def index_document(
             "type":        "pdf",
         })
 
-    # Entity anchor chunk
+    # Entity anchor chunk (placeholder — updated by push_entities_to_index)
     entity_lines = [f"DOCUMENT ENTITY SUMMARY (document_id={document_id}):"]
     if extra_entities:
         for key, val in extra_entities.items():
@@ -559,8 +581,8 @@ def index_document(
     })
     logger.info("Entity anchor: %s", entity_text[:300])
 
-    # PERF-5: Batch embedding — much faster than per-chunk loop
-    t_embed = time.perf_counter()
+    # PERF-5: Batch embedding
+    t_embed   = time.perf_counter()
     embeds_np = BI_ENCODER.encode(docs, normalize_embeddings=True, show_progress_bar=False)
     embeds    = embeds_np.tolist()
     logger.info("Batch embedding: %.2fs for %d chunks", time.perf_counter() - t_embed, len(docs))
@@ -579,9 +601,7 @@ def index_document(
     bm25 = BM25Index()
     bm25.fit(all_texts)
     _bm25_store[document_id]  = (bm25, all_texts)
-
-    # PERF-4: Populate chunk cache so keyword scan never needs collection.get()
-    _chunk_cache[document_id] = all_texts
+    _chunk_cache[document_id] = all_texts  # PERF-4
 
     logger.info(
         "index_document: TOTAL=%.2fs  doc=%d  chunks=%d",
@@ -615,7 +635,7 @@ def rebuild_bm25_from_chroma(document_id: int) -> bool:
         bm25 = BM25Index()
         bm25.fit(texts)
         _bm25_store[document_id]  = (bm25, texts)
-        _chunk_cache[document_id] = texts   # PERF-4: also warm the cache
+        _chunk_cache[document_id] = texts  # PERF-4 + FIX-2
         logger.info("BM25 rebuilt: %d chunks for doc %d", len(texts), document_id)
         return True
     except Exception as exc:
@@ -627,6 +647,10 @@ def update_entity_anchor(document_id: int, extra_entities: Dict) -> None:
     """
     Inject entity data into the index after extraction completes.
     Overwrites the placeholder entity anchor created during initial indexing.
+
+    FIX-1: Previously skipped BM25 rebuild when document_id not in _bm25_store
+    (always true after a server restart). Now always rebuilds from Chroma first
+    if necessary, so the anchor is always refreshed in production.
     """
     entity_lines = [f"DOCUMENT ENTITY SUMMARY (document_id={document_id}):"]
     for key, val in extra_entities.items():
@@ -651,7 +675,14 @@ def update_entity_anchor(document_id: int, extra_entities: Dict) -> None:
     )
     logger.info("Entity anchor updated for doc %d: %s", document_id, entity_text[:300])
 
-    # Rebuild BM25 + refresh chunk cache with updated anchor
+    # FIX-1: Ensure BM25 store is warm before rebuilding it
+    if document_id not in _bm25_store:
+        logger.info(
+            "update_entity_anchor: BM25 cold for doc %d — rebuilding from Chroma first",
+            document_id,
+        )
+        rebuild_bm25_from_chroma(document_id)
+
     if document_id in _bm25_store:
         _, existing_texts = _bm25_store[document_id]
         new_texts = [t for t in existing_texts if not t.startswith("DOCUMENT ENTITY SUMMARY")]
@@ -704,7 +735,7 @@ def debug_retrieval(document_id: int, query: str) -> Dict:
             for i in top if raw[i] > 0
         ]
 
-    kw_results  = _keyword_scan(document_id, query, top_k=10)
+    kw_results   = _keyword_scan(document_id, query, top_k=10)
     final_chunks = retrieve_chunks(document_id, query, k=4)
 
     try:

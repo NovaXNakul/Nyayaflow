@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
-  const register = async (username, email, password, role) => {
-    return await registerRequest(username, email, password, role);
+  const register = async (name, email, password, role, token = null) => {
+    return await registerRequest(name, email, password, role, token);
   };
 
   const logout = () => {

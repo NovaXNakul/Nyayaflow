@@ -6,6 +6,8 @@ import LoginPage from "./pages/Login";
 import RegisterPage from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import OfficerDashboard from "./pages/OfficerDashboard";
+import ForgotPasswordPage from "./pages/ForgotPassword";
+import ResetPasswordPage from "./pages/ResetPassword";
 
 function LandingRedirect() {
   const { user, loading } = useAuth();
@@ -42,6 +44,8 @@ export default function RouterApp() {
           <Route path="/" element={<LandingRedirect />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["officer"]}><OfficerDashboard /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

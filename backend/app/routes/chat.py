@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
-=======
 # app/routers/chat.py
 #
 # OPTIMIZED — target latency: 2–5 s
@@ -16,19 +12,18 @@ from pydantic import BaseModel
 #   OPT-6  Keyword hard-fallback kept but no LLM call needed for it
 
 from __future__ import annotations
-
->>>>>>> origin/dev
 import json
 import logging
 import time
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
-from app.database.session import SessionLocal
+from app.database.session import get_db
 from app.models.case_document import CaseDocument
 from app.models.user import User
+from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.services.llm_service import call_llm
 from app.services.rag_service import is_entity_query, retrieve_chunks, debug_retrieval
@@ -46,11 +41,8 @@ _TOP_K = 4   # OPT-3: was 6; 4 chunks keep the prompt tight
 
 class ChatRequest(BaseModel):
     document_id: int
-<<<<<<< HEAD
-    question: str
-    language: str = "English"
-=======
     question:    str
+    language:    str = "English"
 
 
 class ChatResponse(BaseModel):
@@ -89,7 +81,8 @@ Rules:
 8. If you find a PARTIAL match (e.g. only the first name), report what you
    found rather than saying NOT_FOUND.
 9. Only say "Not mentioned in document" if you have checked every excerpt
-   AND every structured field and the answer is genuinely absent."""
+   AND every structured field and the answer is genuinely absent.
+10. RESPOND IN THE REQUESTED LANGUAGE."""
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -100,6 +93,7 @@ def _build_prompt(
     question:       str,
     chunks:         List[str],
     structured_ctx: Dict[str, Any],
+    language:       str = "English",
 ) -> str:
     """
     OPT-2 / OPT-4: Single combined prompt — RAG excerpts + structured JSON.
@@ -149,11 +143,12 @@ def _build_prompt(
 
     parts.append("─" * 60)
     parts.append(f"Question: {question}")
+    parts.append(f"Response Language: {language}")
     parts.append("")
     parts.append(
         "Instructions: Check structured fields first, then scan every excerpt "
         "for names, amounts, dates, and party details. Extract exact text — "
-        "do not paraphrase numbers or names. Cite your source."
+        "do not paraphrase numbers or names. Cite your source. Respond in the language specified."
     )
     parts.append("")
     parts.append("Answer:")
@@ -164,13 +159,15 @@ def _build_prompt(
 def _build_structured_only_prompt(
     question:       str,
     structured_ctx: Dict[str, Any],
+    language:       str = "English",
 ) -> str:
     """Used only when RAG retrieval returns zero chunks."""
     return (
         f"Structured data extracted from the document:\n"
         f"```json\n{json.dumps(structured_ctx, indent=2, ensure_ascii=False)}\n```\n\n"
-        f"Question: {question}\n\n"
-        f"Answer using only the data above. Extract exact names, amounts, and "
+        f"Question: {question}\n"
+        f"Response Language: {language}\n\n"
+        f"Answer using only the data above in the specified language. Extract exact names, amounts, and "
         f"party details. If truly not present, say 'Not mentioned in document'."
     )
 
@@ -217,61 +214,31 @@ def _keyword_answer(question: str, doc: Any) -> str | None:
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest) -> ChatResponse:
+def chat(req: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ChatResponse:
     t_start = time.perf_counter()
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
 
-<<<<<<< HEAD
-@router.post("/chat")
-def chat(req: ChatRequest, current_user: User = Depends(get_current_user)):
-    with SessionLocal() as db:
-        doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
-        if not doc or not doc.extracted_json:
-            raise HTTPException(404, "Document not ready")
+    doc = db.query(CaseDocument).filter(
+        CaseDocument.id == req.document_id
+    ).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Check access for officers
+    if current_user.role == "officer" and doc.assigned_to != current_user.id:
+        raise HTTPException(403, "Access denied to this case")
 
-        # Check access for officers
-        if current_user.role == "officer" and doc.assigned_to != current_user.id:
-            raise HTTPException(403, "Access denied to this case")
-        
-        q = req.question.strip()
-        
-        try:
-            system_prompt = (
-                "You are a helpful legal AI assistant for a Government Decision Intelligence System. "
-                "You answer questions based strictly on the provided context (case details, action plan, extracted directives). "
-                "Do NOT hallucinate. If the answer is not in the context, say so. Keep answers concise."
-=======
-    with SessionLocal() as db:
-<<<<<<< HEAD
-        doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
-        if not doc or not doc.extracted_json:
-            raise HTTPException(404, "Document not ready")
-        
-        q = req.question.strip()
-        
-        try:
-            system_prompt = (
-                "You are a helpful legal AI assistant for a Government Decision Intelligence System. "
-                f"You MUST respond in {req.language}. "
-                "You answer questions based strictly on the provided context (case details, action plan, extracted directives). "
-                "Do NOT hallucinate. If the answer is not in the context, say so. Keep answers concise."
-=======
-        doc = db.query(CaseDocument).filter(
-            CaseDocument.id == req.document_id
-        ).first()
-        if not doc:
-            raise HTTPException(status_code=404, detail="Document not found")
+    question = req.question.strip()
+    language = req.language
 
-        question = req.question.strip()
+    # ── Structured context (built once, used everywhere) ──────────────────
+    structured_ctx: Dict[str, Any] = {}
+    if doc.extracted_json:
+        structured_ctx["extracted_fields"] = doc.extracted_json
+    if doc.action_plan:
+        structured_ctx["action_plan"] = doc.action_plan
 
-        # ── Structured context (built once, used everywhere) ──────────────────
-        structured_ctx: Dict[str, Any] = {}
-        if doc.extracted_json:
-            structured_ctx["extracted_fields"] = doc.extracted_json
-        if doc.action_plan:
-            structured_ctx["action_plan"] = doc.action_plan
-
-        # ── OPT-6: Try zero-latency keyword answer first ──────────────────────
+    # ── OPT-6: Try zero-latency keyword answer first ──────────────────────
+    if language.lower() == "english":
         kw_answer = _keyword_answer(question, doc)
         if kw_answer and not is_entity_query(question):
             elapsed = int((time.perf_counter() - t_start) * 1000)
@@ -282,81 +249,76 @@ def chat(req: ChatRequest, current_user: User = Depends(get_current_user)):
                 total_chunks_retrieved=0,
                 retrieval_mode="fallback",
                 latency_ms=elapsed,
-<<<<<<< nakul
->>>>>>> origin/dev
-=======
->>>>>>> ce1ac875ba943c9b0fcd915674b8341a044b5c1f
->>>>>>> dev
             )
 
-        # ── STAGE 1: Retrieval  (OPT-1: no HyDE — use raw question) ──────────
-        t_ret = time.perf_counter()
-        try:
-            retrieved_chunks = retrieve_chunks(
-                req.document_id,
-                question,   # OPT-1: raw question, no HyDE expansion
-                k=_TOP_K,   # OPT-3: 4 instead of 6
-            )
-        except Exception as exc:
-            logger.error("Retrieval error: %s", exc)
-            retrieved_chunks = []
-
-        t_ret_done = time.perf_counter()
-        logger.info(
-            "chat: retrieval=%.2fs  chunks=%d  entity=%s  query='%s'",
-            t_ret_done - t_ret,
-            len(retrieved_chunks),
-            is_entity_query(question),
-            question,
+    # ── STAGE 1: Retrieval  (OPT-1: no HyDE — use raw question) ──────────
+    t_ret = time.perf_counter()
+    try:
+        retrieved_chunks = retrieve_chunks(
+            req.document_id,
+            question,   # OPT-1: raw question, no HyDE expansion
+            k=_TOP_K,   # OPT-3: 4 instead of 6
         )
+    except Exception as exc:
+        logger.error("Retrieval error: %s", exc)
+        retrieved_chunks = []
 
-        retrieval_mode = "fallback"
+    t_ret_done = time.perf_counter()
+    logger.info(
+        "chat: retrieval=%.2fs  chunks=%d  entity=%s  query='%s'",
+        t_ret_done - t_ret,
+        len(retrieved_chunks),
+        is_entity_query(question),
+        question,
+    )
 
-        # ── STAGE 2: Single LLM call  (OPT-2: always one call, never two) ────
-        t_llm = time.perf_counter()
-        answer: str
+    retrieval_mode = "fallback"
 
-        if retrieved_chunks:
-            # OPT-4: structured context always in the FIRST (and only) prompt
-            prompt = _build_prompt(question, retrieved_chunks, structured_ctx)
-            retrieval_mode = "rag+structured" if structured_ctx else "rag"
-        elif structured_ctx:
-            prompt = _build_structured_only_prompt(question, structured_ctx)
-            retrieval_mode = "structured"
-        else:
-            elapsed = int((time.perf_counter() - t_start) * 1000)
-            return ChatResponse(
-                answer="No document content available to answer this question.",
-                context_snippets=[],
-                total_chunks_retrieved=0,
-                retrieval_mode="fallback",
-                latency_ms=elapsed,
-            )
+    # ── STAGE 2: Single LLM call  (OPT-2: always one call, never two) ────
+    t_llm = time.perf_counter()
+    answer: str
 
-        raw_answer = call_llm(prompt=prompt, system_prompt=_SYSTEM)
-        t_llm_done = time.perf_counter()
-        logger.info("chat: llm=%.2fs", t_llm_done - t_llm)
-
-        if not raw_answer:
-            answer = "Could not generate an answer — please try again."
-        elif raw_answer.strip() == "NOT_FOUND":
-            answer = "The requested information was not found in the document."
-        else:
-            answer = raw_answer
-
-        elapsed_ms = int((time.perf_counter() - t_start) * 1000)
-        logger.info(
-            "chat: TOTAL=%d ms  mode=%s  doc=%d",
-            elapsed_ms, retrieval_mode, req.document_id,
-        )
-
+    if retrieved_chunks:
+        # OPT-4: structured context always in the FIRST (and only) prompt
+        prompt = _build_prompt(question, retrieved_chunks, structured_ctx, language=language)
+        retrieval_mode = "rag+structured" if structured_ctx else "rag"
+    elif structured_ctx:
+        prompt = _build_structured_only_prompt(question, structured_ctx, language=language)
+        retrieval_mode = "structured"
+    else:
+        elapsed = int((time.perf_counter() - t_start) * 1000)
         return ChatResponse(
-            answer=answer,
-            context_snippets=retrieved_chunks[:3],
-            total_chunks_retrieved=len(retrieved_chunks),
-            retrieval_mode=retrieval_mode,
-            latency_ms=elapsed_ms,
+            answer="No document content available to answer this question.",
+            context_snippets=[],
+            total_chunks_retrieved=0,
+            retrieval_mode="fallback",
+            latency_ms=elapsed,
         )
+
+    raw_answer = call_llm(prompt=prompt, system_prompt=_SYSTEM)
+    t_llm_done = time.perf_counter()
+    logger.info("chat: llm=%.2fs", t_llm_done - t_llm)
+
+    if not raw_answer:
+        answer = "Could not generate an answer — please try again."
+    elif raw_answer.strip() == "NOT_FOUND":
+        answer = "The requested information was not found in the document."
+    else:
+        answer = raw_answer
+
+    elapsed_ms = int((time.perf_counter() - t_start) * 1000)
+    logger.info(
+        "chat: TOTAL=%d ms  mode=%s  doc=%d",
+        elapsed_ms, retrieval_mode, req.document_id,
+    )
+
+    return ChatResponse(
+        answer=answer,
+        context_snippets=retrieved_chunks[:3],
+        total_chunks_retrieved=len(retrieved_chunks),
+        retrieval_mode=retrieval_mode,
+        latency_ms=elapsed_ms,
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

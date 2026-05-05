@@ -19,8 +19,19 @@ def translate_case_data(case_id: int, language: str = "kannada"):
     # Handle case-insensitive language
     lang_lower = language.lower()
     
-    if lang_lower not in {"english", "kannada"}:
-         raise HTTPException(400, "Unsupported language")
+    # Support English, Kannada, and Hindi
+    lang_map = {
+        "english": "English",
+        "kannada": "Kannada",
+        "hindi": "Hindi",
+        "hi": "Hindi",
+        "kn": "Kannada",
+        "en": "English"
+    }
+    
+    target_lang = lang_map.get(lang_lower)
+    if not target_lang:
+         raise HTTPException(400, f"Unsupported language: {language}")
 
     with SessionLocal() as db:
         doc = db.query(CaseDocument).filter(CaseDocument.id == case_id).first()
@@ -50,6 +61,5 @@ def translate_case_data(case_id: int, language: str = "kannada"):
                     "due_date": step.get("due_date", "")
                 })
 
-        target_lang = "English" if lang_lower == "english" else "Kannada"
         translated = translate_structured_data(payload, target_lang)
         return translated

@@ -1,19 +1,17 @@
-# app/services/pdf_service.py
-#
-# PDF ingestion (text extraction) and PDF report generation.
-# text extraction is now delegated to rag_service.load_pdf_text() which uses
-# PyMuPDF (fitz) for better Indian legal document extraction.
-
 import os
 import logging
 import fitz
+from datetime import datetime
 from fastapi import HTTPException
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from app.models.case_document import CaseDocument
+from app.services.extraction_service import translate_structured_data
 
 logger = logging.getLogger(__name__)
-
 
 def extract_pdf_text(file_path: str) -> tuple[str, list[dict]]:
     """
@@ -21,7 +19,7 @@ def extract_pdf_text(file_path: str) -> tuple[str, list[dict]]:
     Returns (merged_text, pages) where pages is a list of {page, text} dicts.
     """
     try:
-        doc   = fitz.open(file_path)
+        doc = fitz.open(file_path)
     except Exception as e:
         raise HTTPException(422, f"Failed to read PDF: {e}")
 
@@ -41,87 +39,202 @@ def extract_pdf_text(file_path: str) -> tuple[str, list[dict]]:
     )
     return merged, pages
 
-
-def generate_pdf(case: CaseDocument) -> str:
-    """Generate a formatted PDF action report for a processed case."""
+def generate_pdf(case: CaseDocument, language: str = "en") -> str:
+    """Generate a professional, court-quality PDF analysis report."""
     reports_dir = "reports"
     os.makedirs(reports_dir, exist_ok=True)
     file_path = f"{reports_dir}/case_{case.id}_report.pdf"
 
-    doc    = SimpleDocTemplate(file_path)
-    styles = getSampleStyleSheet()
-    body   = []
+    # Normalize language
+    target_language = {
+        "en": "English", "english": "English",
+        "hi": "Hindi", "hindi": "Hindi",
+        "kn": "Kannada", "kannada": "Kannada",
+    }.get(language.strip().lower(), "English")
 
-    ex           = case.extracted_json or {}
-    summary_data = ex.get("summary", {})
-    summary_text = (
-        summary_data.get("court_decision", "No summary available.")
-        if isinstance(summary_data, dict)
-        else str(summary_data)
+    ex = case.extracted_json or {}
+    plan_data = case.action_plan or {}
+    
+    if target_language != "English":
+        combined_payload = {"extraction": ex, "plan": plan_data}
+        translated = translate_structured_data(combined_payload, target_language)
+        ex = translated.get("extraction", ex)
+        plan_data = translated.get("plan", plan_data)
+
+    # Professional Document Setup
+    doc = SimpleDocTemplate(
+        file_path,
+        pagesize=A4,
+        rightMargin=72, leftMargin=72,
+        topMargin=72, bottomMargin=72
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom Styles
+    title_style = ParagraphStyle(
+        'CourtTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        leading=22,
+        alignment=1, # Center
+        spaceAfter=20,
+        textColor=colors.HexColor("#1e3a8a"), # Deep Blue
+        fontName='Helvetica-Bold'
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Heading2'],
+        fontSize=13,
+        leading=16,
+        spaceBefore=15,
+        spaceAfter=8,
+        textColor=colors.HexColor("#0f172a"),
+        fontName='Helvetica-Bold',
+        borderPadding=(2, 0, 2, 0),
+        borderWidth=0,
+        borderColor=colors.HexColor("#cbd5e1")
     )
 
-    body.append(Paragraph("Court Case Action Report", styles["Title"]))
-    body.append(Spacer(1, 10))
+    label_style = ParagraphStyle(
+        'Label',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName='Helvetica-Bold',
+        textColor=colors.HexColor("#475569")
+    )
 
-    body.append(Paragraph(f"<b>Case ID:</b> {case.id}",                   styles["Normal"]))
-    body.append(Paragraph(f"<b>Date:</b> {ex.get('date_of_order', 'N/A')}", styles["Normal"]))
-    body.append(Paragraph(f"<b>Department:</b> {ex.get('department', 'N/A')}", styles["Normal"]))
-    body.append(Paragraph(f"<b>Priority:</b> {ex.get('priority', 'N/A')}",  styles["Normal"]))
+    value_style = ParagraphStyle(
+        'Value',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName='Helvetica',
+        textColor=colors.HexColor("#1e293b")
+    )
 
-    # ── Parties ────────────────────────────────────────────────────────────────
-    if ex.get("borrower"):
-        body.append(Spacer(1, 6))
-        body.append(Paragraph("Parties:", styles["Heading2"]))
-        body.append(Paragraph(f"<b>Borrower:</b> {ex['borrower']}", styles["Normal"]))
-        if ex.get("co_borrowers"):
-            cos = ex["co_borrowers"]
-            if isinstance(cos, list):
-                cos = ", ".join(cos)
-            body.append(Paragraph(f"<b>Co-Borrowers / Guarantors:</b> {cos}", styles["Normal"]))
-        if ex.get("loan_amount"):
-            body.append(Paragraph(f"<b>Loan Amount:</b> {ex['loan_amount']}", styles["Normal"]))
+    body_style = ParagraphStyle(
+        'BodyText',
+        parent=styles['Normal'],
+        fontSize=10,
+        leading=14,
+        alignment=4, # Justify
+        spaceAfter=10
+    )
 
-    body.append(Spacer(1, 10))
-    body.append(Paragraph("Key Directives:", styles["Heading2"]))
-    directives = ex.get("directives", [])
+    story = []
+
+    # 1. HEADER SECTION
+    story.append(Paragraph("LEGAL CASE ANALYSIS REPORT", title_style))
+    story.append(Spacer(1, 10))
+
+    header_data = [
+        [Paragraph("CASE IDENTIFIER", label_style), Paragraph(f"CASE-{case.id:04d}", value_style)],
+        [Paragraph("DATE OF REPORT", label_style), Paragraph(datetime.utcnow().strftime("%d %B %Y"), value_style)],
+        [Paragraph("ORDER DATE", label_style), Paragraph(ex.get('date_of_order', 'N/A'), value_style)],
+        [Paragraph("DEPARTMENT", label_style), Paragraph(ex.get('department', 'General Administration'), value_style)],
+    ]
+    
+    header_table = Table(header_data, colWidths=[1.5*inch, 4*inch])
+    header_table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e2e8f0")),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (0,-1), colors.HexColor("#f8fafc")),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 20))
+
+    # 2. CASE SUMMARY
+    story.append(Paragraph("1. CASE SUMMARY", section_style))
+    summary_text = ex.get('case_details', 'No summary provided in the document.')
+    story.append(Paragraph(summary_text, body_style))
+
+    # 3. KEY FACTS
+    story.append(Paragraph("2. KEY FACTS", section_style))
+    facts = []
+    if ex.get('borrower'):
+        facts.append(f"<b>Primary Party:</b> {ex['borrower']}")
+    if ex.get('loan_amount'):
+        facts.append(f"<b>Value/Amount:</b> {ex['loan_amount']}")
+    if ex.get('co_borrowers'):
+        cos = ex['co_borrowers']
+        if isinstance(cos, list): cos = ", ".join(cos)
+        facts.append(f"<b>Associated Parties:</b> {cos}")
+    
+    if not facts:
+        facts.append("No specific entities or facts identified.")
+    
+    for fact in facts:
+        story.append(Paragraph(f"• {fact}", body_style))
+
+    # 4. LEGAL ANALYSIS
+    story.append(Paragraph("3. LEGAL ANALYSIS", section_style))
+    analysis_text = ex.get('action_required', "Based on the court order, immediate compliance or procedural response is mandated as per the directives listed below. The document outlines specific legal requirements that must be addressed by the concerned department.")
+    story.append(Paragraph(analysis_text, body_style))
+
+    # 5. KEY DIRECTIVES
+    story.append(Paragraph("4. MANDATORY DIRECTIVES", section_style))
+    directives = ex.get('directives', [])
     if directives:
         for d in directives:
-            body.append(Paragraph(f"• {d}", styles["Normal"]))
+            story.append(Paragraph(f"• {d}", body_style))
     else:
-        body.append(Paragraph("No directives extracted.", styles["Normal"]))
+        story.append(Paragraph("No specific directives identified.", body_style))
 
-    body.append(Spacer(1, 10))
-    body.append(Paragraph("Action Plan:", styles["Heading2"]))
-    body.append(Paragraph(ex.get("action_required", "None specified"), styles["Normal"]))
+    # 6. COMPLIANCE TIMELINE
+    story.append(Paragraph("5. TIMELINE & DEADLINES", section_style))
+    timeline_data = [
+        [Paragraph("Compliance Window", label_style), Paragraph(ex.get('timeline', 'Immediate'), value_style)],
+        [Paragraph("FINAL DEADLINE", label_style), Paragraph(f"<b>{ex.get('deadline_date', 'N/A')}</b>", ParagraphStyle('Urgent', parent=value_style, textColor=colors.red))],
+    ]
+    t_table = Table(timeline_data, colWidths=[1.5*inch, 4*inch])
+    t_table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#f1f5f9")),
+        ('LINEBELOW', (0,0), (-1,0), 0.5, colors.HexColor("#f1f5f9")),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(t_table)
 
-    plan_steps = (case.action_plan or {}).get("plan", {}).get("steps", [])
+    # 7. RISK ASSESSMENT
+    story.append(Paragraph("6. RISK & PRIORITY", section_style))
+    priority = (ex.get('priority') or 'Medium').upper()
+    p_color = colors.green
+    if priority == 'HIGH': p_color = colors.red
+    elif priority == 'MEDIUM': p_color = colors.orange
+    
+    story.append(Paragraph(f"<b>Priority Level:</b> <font color='{p_color}'>{priority}</font>", body_style))
+    story.append(Paragraph("<b>Risk Implications:</b> Failure to comply within the stipulated time may lead to contempt of court proceedings or administrative penalties.", body_style))
+
+    # 8. RECOMMENDED ACTIONS
+    story.append(Paragraph("7. RECOMMENDED ACTIONS", section_style))
+    plan_steps = plan_data.get('steps', [])
     if plan_steps:
-        body.append(Spacer(1, 5))
-        body.append(Paragraph("Execution Steps:", styles["Heading3"]))
-        for step in plan_steps:
-            body.append(Paragraph(
-                f"- {step.get('step')} "
-                f"(Owner: {step.get('owner')}, Due: {step.get('due_date')})",
-                styles["Normal"],
-            ))
-
-    body.append(Spacer(1, 10))
-    body.append(Paragraph("Deadline:", styles["Heading2"]))
-    body.append(Paragraph(ex.get("deadline_date", "Not specified"), styles["Normal"]))
-
-    body.append(Spacer(1, 10))
-    body.append(Paragraph("Summary:", styles["Heading2"]))
-    if isinstance(summary_data, dict):
-        body.append(Paragraph(f"<b>Key Facts:</b> {summary_data.get('key_facts', '')}",       styles["Normal"]))
-        body.append(Paragraph(f"<b>Court Decision:</b> {summary_data.get('court_decision', '')}", styles["Normal"]))
-        body.append(Paragraph(f"<b>Required Action:</b> {summary_data.get('required_action', '')}", styles["Normal"]))
+        for i, step in enumerate(plan_steps):
+            step_text = f"<b>Step {i+1}:</b> {step.get('step')} <br/>" \
+                        f"<font size='8'>Owner: {step.get('owner')} | Deadline: {step.get('due_date')}</font>"
+            story.append(Paragraph(step_text, body_style))
     else:
-        body.append(Paragraph(summary_text, styles["Normal"]))
+        story.append(Paragraph("Action plan pending detailed review.", body_style))
 
-    body.append(Spacer(1, 10))
-    body.append(Paragraph("Verification Status:", styles["Heading2"]))
-    body.append(Paragraph(case.status.upper(), styles["Normal"]))
+    # 9. CONCLUSION
+    story.append(Paragraph("8. CONCLUSION", section_style))
+    conclusion = plan_data.get('compliance_notes', "The case requires immediate administrative attention to ensure all court directives are fulfilled. Regular monitoring of the implementation steps is advised.")
+    story.append(Paragraph(conclusion, body_style))
 
-    doc.build(body)
-    logger.info("generate_pdf: written to %s", file_path)
+    # Footer/Signatory
+    story.append(Spacer(1, 40))
+    story.append(Paragraph("Generated by GovOS Court Intelligence System", 
+                         ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, alignment=1, textColor=colors.gray)))
+    story.append(Paragraph(f"Verification Status: {case.status.upper()}", 
+                         ParagraphStyle('FooterStatus', parent=styles['Normal'], fontSize=8, alignment=1, textColor=colors.gray)))
+
+    doc.build(story)
+    logger.info("generate_pdf: written professional report to %s", file_path)
     return file_path
+

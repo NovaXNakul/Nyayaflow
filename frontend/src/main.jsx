@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import RouterApp from "./RouterApp";
 import "./styles.css";
+import "./i18n";
+import { ThemeProvider } from "./context/ThemeContext";
 
 // Disable back-forward cache to prevent cached sensitive pages
 window.addEventListener("pageshow", (event) => {
@@ -24,6 +26,8 @@ window.addEventListener("load", () => {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <RouterApp />
+    <ThemeProvider>
+      <RouterApp />
+    </ThemeProvider>
   </React.StrictMode>
 );

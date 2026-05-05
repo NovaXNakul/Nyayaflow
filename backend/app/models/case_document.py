@@ -1,18 +1,26 @@
 import os
-from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database.session import Base
 
 class CaseDocument(Base):
     __tablename__ = "case_documents"
-    id = Column(Integer, primary_key=True)
+    
+    id = Column(Integer, primary_key=True, index=True)
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
     raw_text = Column(Text, nullable=True)
     extracted_json = Column(JSONB if os.getenv("DATABASE_URL", "").startswith("postgre") else JSON, nullable=True)
     action_plan = Column(JSONB if os.getenv("DATABASE_URL", "").startswith("postgre") else JSON, nullable=True)
     status = Column(String(50), default="uploaded")
-    created_by = Column(Integer, nullable=True)
-    assigned_to = Column(Integer, nullable=True)
+    
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    creator = relationship("User", foreign_keys=[created_by])
+    assignee = relationship("User", foreign_keys=[assigned_to])
