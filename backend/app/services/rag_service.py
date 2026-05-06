@@ -27,7 +27,6 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import chromadb
-from sentence_transformers import CrossEncoder, SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +42,7 @@ def get_bi_encoder():
     if _bi_encoder is None:
         print("Loading SentenceTransformer model...")
         try:
+            from sentence_transformers import SentenceTransformer
             _bi_encoder = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
         except Exception as e:
             logger.error(f"Model loading failed: {e}")
@@ -54,6 +54,7 @@ def get_reranker():
     if _reranker is None:
         print("Loading CrossEncoder reranker...")
         try:
+            from sentence_transformers import CrossEncoder
             _reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
         except Exception as e:
             logger.error(f"Reranker loading failed: {e}")
