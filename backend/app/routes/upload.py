@@ -8,6 +8,8 @@ from app.models.case_document import CaseDocument
 from app.models.user import User
 from app.core.security import get_current_user
 
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
 router = APIRouter(tags=["Upload"])
 logger = logging.getLogger(__name__)
 
@@ -25,9 +27,11 @@ async def upload_file(
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF supported")
 
-    target = UPLOAD_DIR / file.filename
     content = await file.read()
-    
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, "PDF exceeds maximum upload size of 10MB")
+
+    target = UPLOAD_DIR / file.filename
     with open(target, "wb") as f:
         f.write(content)
     

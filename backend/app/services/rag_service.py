@@ -30,6 +30,12 @@ import chromadb
 
 logger = logging.getLogger(__name__)
 
+# Force CPU-only execution for all sentence-transformers models
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+
+MAX_PDF_CHARS = 600_000
+MAX_CHUNKS = 120
+
 # ══════════════════════════════════════════════════════════════════════════════
 # MEMORY-SAFE BATCHED EMBEDDING GENERATION
 # ══════════════════════════════════════════════════════════════════════════════
@@ -92,9 +98,13 @@ def get_bi_encoder():
     global _bi_encoder
     if _bi_encoder is None:
         print("Loading SentenceTransformer model...")
+        os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
         try:
             from sentence_transformers import SentenceTransformer
-            _bi_encoder = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+            _bi_encoder = SentenceTransformer(
+                "sentence-transformers/all-mpnet-base-v2",
+                device="cpu",
+            )
         except Exception as e:
             logger.error(f"Model loading failed: {e}")
             raise
@@ -104,9 +114,13 @@ def get_reranker():
     global _reranker
     if _reranker is None:
         print("Loading CrossEncoder reranker...")
+        os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
         try:
             from sentence_transformers import CrossEncoder
-            _reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+            _reranker = CrossEncoder(
+                "cross-encoder/ms-marco-MiniLM-L-6-v2",
+                device="cpu",
+            )
         except Exception as e:
             logger.error(f"Reranker loading failed: {e}")
             raise
@@ -232,6 +246,13 @@ def load_pdf_text(file_path: str) -> str:
             pages.append(f"[PAGE {i + 1}]\n{raw.strip()}")
         doc.close()
         full = "\n\n".join(pages)
+        if len(full) > MAX_PDF_CHARS:
+            logger.warning(
+                "PDF text truncated from %d to %d chars for memory safety",
+                len(full),
+                MAX_PDF_CHARS,
+            )
+            full = full[:MAX_PDF_CHARS]
         logger.info("PDF loaded via PyMuPDF: %d pages, %d chars", len(pages), len(full))
         return full
     except ImportError:
@@ -246,6 +267,13 @@ def load_pdf_text(file_path: str) -> str:
         raw = re.sub(r'[ \t]{2,}', ' ', raw)
         pages.append(f"[PAGE {i + 1}]\n{raw.strip()}")
     full = "\n\n".join(pages)
+    if len(full) > MAX_PDF_CHARS:
+        logger.warning(
+            "PDF text truncated from %d to %d chars for memory safety",
+            len(full),
+            MAX_PDF_CHARS,
+        )
+        full = full[:MAX_PDF_CHARS]
     logger.info("PDF loaded via pypdf: %d pages, %d chars", len(pages), len(full))
     return full
 
@@ -358,6 +386,14 @@ def chunk_text(
             seen.add(key)
             deduped.append(c)
 
+    if len(deduped) > MAX_CHUNKS:
+        logger.warning(
+            "chunk_text: truncating %d chunks to %d max for memory safety",
+            len(deduped),
+            MAX_CHUNKS,
+        )
+        deduped = deduped[:MAX_CHUNKS]
+
     logger.info("chunk_text: %d chunks from %d chars", len(deduped), len(text))
     return deduped
 
@@ -394,8 +430,18 @@ def _embed_query(query: str, entity_mode: bool) -> List[float]:
     Entity queries: raw embedding only — averaging dilutes discriminative signal.
     Non-entity: average 3 paraphrases for broader semantic coverage.
     """
+    import torch
     if entity_mode:
-        return get_bi_encoder().encode(query, normalize_embeddings=True, batch_size=8, show_progress_bar=False).tolist()
+        with torch.no_grad():
+            vec = get_bi_encoder().encode(
+                query,
+                normalize_embeddings=True,
+                batch_size=8,
+                show_progress_bar=False,
+                convert_to_numpy=True,
+                device="cpu",
+            )
+        return vec.tolist()
 
     expansions = [
         query,
@@ -403,7 +449,15 @@ def _embed_query(query: str, entity_mode: bool) -> List[float]:
         f"Details related to: {query}",
     ]
     import numpy as np
-    vecs = get_bi_encoder().encode(expansions, normalize_embeddings=True, batch_size=8, show_progress_bar=False)
+    with torch.no_grad():
+        vecs = get_bi_encoder().encode(
+            expansions,
+            normalize_embeddings=True,
+            batch_size=8,
+            show_progress_bar=False,
+            convert_to_numpy=True,
+            device="cpu",
+        )
     avg  = vecs.mean(axis=0)
     return avg.tolist()
 
@@ -632,6 +686,9 @@ def index_document(
 
     raw_text = load_pdf_text(file_path)
     chunks   = chunk_text(raw_text)
+    import gc
+    del raw_text
+    gc.collect()
 
     ids:       List[str]  = []
     docs:      List[str]  = []
@@ -710,6 +767,7 @@ def index_document(
         "index_document: TOTAL=%.2fs  doc=%d  chunks=%d",
         time.perf_counter() - t0, document_id, len(ids),
     )
+    gc.collect()
     return len(ids)
 
 
@@ -764,7 +822,15 @@ def update_entity_anchor(document_id: int, extra_entities: Dict) -> None:
     entity_text = "\n".join(entity_lines)
     eid = f"{document_id}_entities"
 
-    embed = get_bi_encoder().encode(entity_text, normalize_embeddings=True, batch_size=8, show_progress_bar=False).tolist()
+    import torch
+    with torch.no_grad():
+        embed = get_bi_encoder().encode(
+            [entity_text],
+            batch_size=1,
+            show_progress_bar=False,
+            convert_to_numpy=True,
+            device="cpu",
+        )[0].tolist()
     get_collection().upsert(
         ids=[eid],
         documents=[entity_text],
