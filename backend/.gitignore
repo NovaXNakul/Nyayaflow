@@ -21,6 +21,13 @@ venv/
 env/
 
 # =========================
+# NODE MODULES
+# =========================
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# =========================
 # DATABASE
 # =========================
 *.db
@@ -33,7 +40,7 @@ env/
 server.log
 
 # =========================
-# UPLOADS (OPTIONAL)
+# UPLOADS
 # =========================
 uploads/
 
@@ -49,17 +56,29 @@ uploads/
 .idea/
 
 # =========================
-# MISC
+# BUILD FILES
 # =========================
-*.zip
-*.tar.gz
-# backend
+dist/
+build/
+
+# =========================
+# BACKEND GENERATED FILES
+# =========================
 backend/chroma_db/
 backend/reports/
 
-# frontend temp
+# =========================
+# FRONTEND TEMP FILES
+# =========================
 *.timestamp-*.mjs
 
-# general
+# =========================
+# OPTIONAL LARGE FILES
+# =========================
 *.bin
-*.pdf
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
