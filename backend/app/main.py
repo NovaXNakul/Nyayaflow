@@ -17,8 +17,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+logger.info("Starting FastAPI app...")
+
 # Create tables and verify schema
 try:
+    logger.info("Initializing database connection...")
     Base.metadata.create_all(bind=engine)
     
     # Dynamic schema update for existing tables
@@ -77,9 +80,14 @@ try:
 except Exception as e:
     logger.error(f"Error initializing database: {e}")
 
-# Import routers
-from app.routes import upload, extract, verify, download, dashboard, chat, auth, tasks, translate, admin
+logger.info("Database verification complete")
 
+# Import routers
+logger.info("Importing route modules...")
+from app.routes import upload, extract, verify, download, dashboard, chat, tasks, translate, auth, admin
+logger.info("Route modules imported successfully")
+
+logger.info("Creating FastAPI app...")
 app = FastAPI(
     title="Court Decision Intelligence System",
     description="Production-grade backend for legal document analysis",
@@ -106,6 +114,11 @@ app.include_router(chat.router)
 app.include_router(tasks.router)
 app.include_router(translate.router)
 app.include_router(admin.router)
+logger.info("Routers included successfully")
+
+logger.info("FastAPI app initialization complete")
+
+logger.info("Startup complete - ready to accept connections")
 
 @app.get("/")
 def root():
