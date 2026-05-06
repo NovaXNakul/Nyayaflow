@@ -1,15 +1,9 @@
 import axios from "axios";
 
-// ✅ Base URL FIX (handles env + fallback)
-const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  return "";
-};
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: API_URL,
   timeout: 180000, // ✅ increased timeout (3 min)
 });
 
@@ -41,7 +35,7 @@ api.interceptors.response.use(
 
     if (error.request) {
       throw new Error(
-        "Network error - backend not reachable. Make sure server is running on http://127.0.0.1:8000"
+        "Network error - backend not reachable. Make sure the server is running."
       );
     }
 
