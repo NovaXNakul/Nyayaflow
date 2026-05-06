@@ -27,13 +27,17 @@ async def upload_file(
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF supported")
 
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, "PDF exceeds maximum upload size of 10MB")
-
     target = UPLOAD_DIR / file.filename
     with open(target, "wb") as f:
-        f.write(content)
+        total = 0
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, "PDF exceeds maximum upload size of 10MB")
+            f.write(chunk)
     
     logger.info(f"File saved to {target}")
 
