@@ -34,6 +34,10 @@ def register(req: UserCreate, db: Session = Depends(get_db), current_user: Optio
         db.add(user)
         db.commit()
         db.refresh(user)
+        try:
+            send_welcome_email(user.email, user.name, user.role)
+        except Exception:
+            pass
         return user
 
     # 3. Handle Invite-Based Registration (for Officers)
@@ -89,6 +93,10 @@ def register(req: UserCreate, db: Session = Depends(get_db), current_user: Optio
         db.add(user)
         db.commit()
         db.refresh(user)
+        try:
+            send_welcome_email(user.email, user.name, user.role)
+        except Exception:
+            pass
         return user
 
     # 5. Default: Registration is closed
