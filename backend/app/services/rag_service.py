@@ -88,7 +88,9 @@ def batch_encode(texts: List[str], batch_size: int = 4) -> List[List[float]]:
         # Small delay to allow memory to settle
         time.sleep(0.1)
 
-    logger.info("Batched embedding complete: %d embeddings generated", len(embeddings))
+    logger.info("Batched embedding complete: %d embeddings generated. Performing final cleanup...", len(embeddings))
+    gc.collect()
+    logger.info("Memory cleanup completion.")
     return embeddings
 
 _bi_encoder = None
@@ -684,8 +686,9 @@ def index_document(
 
     _purge_document(document_id)
 
-    raw_text = load_pdf_text(file_path)
+    logger.info("PDF upload processed. Chunking started...")
     chunks   = chunk_text(raw_text)
+    logger.info("Chunking complete: %d chunks created.", len(chunks))
     import gc
     del raw_text
     gc.collect()
@@ -757,6 +760,7 @@ def index_document(
         del batch_ids, batch_docs, batch_embeds, batch_metas
         import gc
         gc.collect()
+        logger.info("Memory cleanup completion (Chroma batch).")
     # Build BM25
     bm25 = BM25Index()
     bm25.fit(all_texts)
@@ -768,6 +772,7 @@ def index_document(
         time.perf_counter() - t0, document_id, len(ids),
     )
     gc.collect()
+    logger.info("Indexing completion for doc_id=%d", document_id)
     return len(ids)
 
 
