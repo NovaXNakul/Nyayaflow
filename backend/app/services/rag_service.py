@@ -687,6 +687,7 @@ def index_document(
     _purge_document(document_id)
 
     logger.info("PDF upload processed. Chunking started...")
+    raw_text = load_pdf_text(file_path)
     chunks   = chunk_text(raw_text)
     logger.info("Chunking complete: %d chunks created.", len(chunks))
     import gc

@@ -1,7 +1,7 @@
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.database.session import get_db
@@ -10,13 +10,14 @@ from app.models.password_reset import PasswordResetToken
 from app.schemas.user import UserCreate, UserResponse, Token, LoginRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.core.security import get_password_hash, verify_password, create_access_token, get_current_user, get_admin_user, get_current_user_optional
 from app.services.email_service import send_reset_email, send_welcome_email
+import os
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 from app.models.invite import Invite
 
 @router.post("/register", response_model=UserResponse)
-def register(req: UserCreate, db: Session = Depends(get_db), current_user: Optional[User] = Depends(get_current_user_optional)):
+def register(req: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: Optional[User] = Depends(get_current_user_optional)):
     # 1. Check if any user exists
     any_user = db.query(User).first()
 
@@ -34,10 +35,7 @@ def register(req: UserCreate, db: Session = Depends(get_db), current_user: Optio
         db.add(user)
         db.commit()
         db.refresh(user)
-        try:
-            send_welcome_email(user.email, user.name, user.role)
-        except Exception:
-            pass
+        background_tasks.add_task(send_welcome_email, user.email, user.name, user.role)
         return user
 
     # 3. Handle Invite-Based Registration (for Officers)
@@ -69,11 +67,8 @@ def register(req: UserCreate, db: Session = Depends(get_db), current_user: Optio
         db.commit()
         db.refresh(user)
         
-        # Send welcome email
-        try:
-            send_welcome_email(user.email, user.name, user.role)
-        except Exception:
-            pass
+        # Send welcome email asynchronously
+        background_tasks.add_task(send_welcome_email, user.email, user.name, user.role)
             
         return user
 
@@ -93,10 +88,7 @@ def register(req: UserCreate, db: Session = Depends(get_db), current_user: Optio
         db.add(user)
         db.commit()
         db.refresh(user)
-        try:
-            send_welcome_email(user.email, user.name, user.role)
-        except Exception:
-            pass
+        background_tasks.add_task(send_welcome_email, user.email, user.name, user.role)
         return user
 
     # 5. Default: Registration is closed
@@ -130,7 +122,7 @@ def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 @router.post("/forgot-password")
-def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(req: ForgotPasswordRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if user:
         token = secrets.token_urlsafe(32)
@@ -144,8 +136,9 @@ def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
         db.add(reset_token)
         db.commit()
         
-        reset_link = f"http://localhost:3000/reset-password?token={token}"
-        send_reset_email(user.email, reset_link)
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+        reset_link = f"{frontend_url}/reset-password?token={token}"
+        background_tasks.add_task(send_reset_email, user.email, reset_link)
         
     return {"message": "If this email is registered, you will receive a reset link shortly."}
 

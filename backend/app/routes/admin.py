@@ -11,8 +11,11 @@ from app.services.email_service import send_invite_email
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
+from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
+import os
+
 @router.post("/invite", response_model=InviteResponse)
-def create_invite(req: InviteCreate, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
+def create_invite(req: InviteCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
     # 1. Check if user already exists
     existing_user = db.query(User).filter(User.email == req.email).first()
     if existing_user:
@@ -45,14 +48,11 @@ def create_invite(req: InviteCreate, db: Session = Depends(get_db), admin: User 
     db.commit()
     db.refresh(invite)
 
-    # 5. Send Invite Email
-    invite_link = f"http://localhost:3000/register?token={token}"
-    try:
-        send_invite_email(invite.email, invite.name or "Officer", invite_link)
-    except Exception as e:
-        print(f"ERROR: Failed to send invite email: {str(e)}")
-        # We don't fail the request, but log it
-        
+    # 5. Send Invite Email asynchronously
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+    invite_link = f"{frontend_url}/register?token={token}"
+    background_tasks.add_task(send_invite_email, invite.email, invite.name or "Officer", invite_link)
+
     return invite
 
 @router.post("/validate-invite", response_model=InviteTokenResponse)
