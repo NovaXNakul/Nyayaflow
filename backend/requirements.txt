@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi
 uvicorn[standard]
 python-multipart
@@ -14,10 +15,8 @@ bcrypt
 python-jose[cryptography]
 reportlab
 chromadb
-sentence-transformers==2.7.0
-torch==2.2.2
+sentence-transformers>=2.7.0
+torch==2.11.0
 pypdf
 groq
 numpy
-
---extra-index-url https://download.pytorch.org/whl/cpu
