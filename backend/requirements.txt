@@ -10,10 +10,11 @@ python-dotenv
 PyMuPDF
 openai
 passlib[bcrypt]
+bcrypt
 python-jose[cryptography]
 reportlab
 chromadb
 sentence-transformers
 pypdf
 groq
-
+numpy
