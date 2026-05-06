@@ -31,8 +31,59 @@ import chromadb
 logger = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# LAZY-LOADED MODELS
+# MEMORY-SAFE BATCHED EMBEDDING GENERATION
 # ══════════════════════════════════════════════════════════════════════════════
+
+def batch_encode(texts: List[str], batch_size: int = 4) -> List[List[float]]:
+    """
+    Memory-safe batched embedding generation for low-memory environments.
+    Processes texts in small batches to prevent memory exhaustion.
+    """
+    import gc
+    import torch
+
+    embeddings = []
+    total_batches = math.ceil(len(texts) / batch_size)
+
+    logger.info("Starting batched embedding: %d texts, batch_size=%d, %d batches",
+                len(texts), batch_size, total_batches)
+
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        batch_num = (i // batch_size) + 1
+
+        logger.info("Processing embedding batch %d/%d (%d texts)",
+                    batch_num, total_batches, len(batch))
+
+        try:
+            # Force CPU and disable gradients for memory efficiency
+            with torch.no_grad():
+                batch_embeddings = get_bi_encoder().encode(
+                    batch,
+                    batch_size=batch_size,
+                    show_progress_bar=False,
+                    convert_to_numpy=True,
+                    device='cpu'  # Explicitly force CPU
+                )
+
+            # Convert to list and extend results
+            embeddings.extend(batch_embeddings.tolist())
+
+            logger.info("Completed embedding batch %d/%d", batch_num, total_batches)
+
+        except Exception as e:
+            logger.error("Failed embedding batch %d/%d: %s", batch_num, total_batches, e)
+            raise
+
+        # Aggressive memory cleanup between batches
+        del batch
+        gc.collect()
+
+        # Small delay to allow memory to settle
+        time.sleep(0.1)
+
+    logger.info("Batched embedding complete: %d embeddings generated", len(embeddings))
+    return embeddings
 
 _bi_encoder = None
 _reranker = None
@@ -621,22 +672,34 @@ def index_document(
     })
     logger.info("Entity anchor: %s", entity_text[:300])
 
-    # PERF-5: Batch embedding
-    t_embed   = time.perf_counter()
-    embeds_np = get_bi_encoder().encode(docs, normalize_embeddings=True, batch_size=8, show_progress_bar=False)
-    embeds    = embeds_np.tolist()
-    logger.info("Batch embedding: %.2fs for %d chunks", time.perf_counter() - t_embed, len(docs))
+    # PERF-5: Memory-safe batched embedding
+    t_embed = time.perf_counter()
+    embeds = batch_encode(docs, batch_size=4)  # Use smaller batch size for low memory
+    logger.info("Memory-safe embedding: %.2fs for %d chunks", time.perf_counter() - t_embed, len(docs))
 
-    # Upsert to ChromaDB in batches
-    BATCH = 100
-    for start in range(0, len(ids), BATCH):
+    # Upsert to ChromaDB in smaller batches for memory safety
+    CHROMA_BATCH = 50  # Smaller batch size for ChromaDB operations
+    for start in range(0, len(ids), CHROMA_BATCH):
+        end = start + CHROMA_BATCH
+        batch_ids = ids[start:end]
+        batch_docs = docs[start:end]
+        batch_embeds = embeds[start:end]
+        batch_metas = metas[start:end]
+
+        logger.info("Upserting ChromaDB batch %d-%d (%d chunks)",
+                    start, end, len(batch_ids))
+
         get_collection().upsert(
-            ids=ids[start:start + BATCH],
-            documents=docs[start:start + BATCH],
-            embeddings=embeds[start:start + BATCH],
-            metadatas=metas[start:start + BATCH],
+            ids=batch_ids,
+            documents=batch_docs,
+            embeddings=batch_embeds,
+            metadatas=batch_metas,
         )
 
+        # Memory cleanup between ChromaDB batches
+        del batch_ids, batch_docs, batch_embeds, batch_metas
+        import gc
+        gc.collect()
     # Build BM25
     bm25 = BM25Index()
     bm25.fit(all_texts)

@@ -122,11 +122,7 @@ logger.info("Startup complete - ready to accept connections")
 
 @app.get("/")
 def root():
-    return {
-        "status": "online",
-        "message": "Court Decision Intelligence API is running",
-        "version": "1.0.0"
-    }
+    return {"message": "CCMS Backend Running Successfully"}
 
 @app.get("/api/health")
 def health_check():
