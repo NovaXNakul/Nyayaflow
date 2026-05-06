@@ -1,4 +1,5 @@
 import os
+import socket
 import smtplib
 import logging
 from email.mime.text import MIMEText
@@ -9,6 +10,29 @@ load_dotenv()
 
 # Logger setup
 logger = logging.getLogger(__name__)
+
+# Monkey-patch socket to force IPv4 (fixes [Errno 101] Network is unreachable on Render/IPv6)
+orig_create_connection = socket.create_connection
+def _create_ipv4_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+    host, port = address
+    for res in socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM):
+        af, socktype, proto, canonname, sa = res
+        sock = None
+        try:
+            sock = socket.socket(af, socktype, proto)
+            if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                sock.settimeout(timeout)
+            if source_address:
+                sock.bind(source_address)
+            sock.connect(sa)
+            return sock
+        except socket.error:
+            if sock is not None:
+                sock.close()
+    # Fallback to original if IPv4 fails completely
+    return orig_create_connection(address, timeout, source_address)
+
+socket.create_connection = _create_ipv4_connection
 
 # Mandatory Env Config
 EMAIL_USER = os.getenv("EMAIL_USER")
@@ -122,9 +146,9 @@ def send_reset_email(to_email: str, reset_link: str):
     try:
         # Connect and Send
         if port == 465:
-            server = smtplib.SMTP_SSL(host, port)
+            server = smtplib.SMTP_SSL(host, port, timeout=10)
         else:
-            server = smtplib.SMTP(host, port)
+            server = smtplib.SMTP(host, port, timeout=10)
             server.starttls()
             
         server.login(EMAIL_USER, EMAIL_PASS)
@@ -218,9 +242,9 @@ def send_welcome_email(to_email: str, name: str, role: str):
 
     try:
         if port == 465:
-            server = smtplib.SMTP_SSL(host, port)
+            server = smtplib.SMTP_SSL(host, port, timeout=10)
         else:
-            server = smtplib.SMTP(host, port)
+            server = smtplib.SMTP(host, port, timeout=10)
             server.starttls()
             
         server.login(EMAIL_USER, EMAIL_PASS)
@@ -324,9 +348,9 @@ def send_invite_email(to_email: str, name: str, invite_link: str):
 
     try:
         if port == 465:
-            server = smtplib.SMTP_SSL(host, port)
+            server = smtplib.SMTP_SSL(host, port, timeout=10)
         else:
-            server = smtplib.SMTP(host, port)
+            server = smtplib.SMTP(host, port, timeout=10)
             server.starttls()
             
         server.login(EMAIL_USER, EMAIL_PASS)

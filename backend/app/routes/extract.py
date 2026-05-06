@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from pydantic import BaseModel
 import logging
 from datetime import datetime
@@ -28,7 +28,7 @@ class ActionRequest(BaseModel):
     language: str = "English"
 
 @router.post("/extract")
-def extract_doc(req: ExtractRequest, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+def extract_doc(req: ExtractRequest, background_tasks: BackgroundTasks, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     logger.info(f"Extracting document {req.document_id} with language {req.language}")
     doc = db.query(CaseDocument).filter(CaseDocument.id == req.document_id).first()
     if not doc:
@@ -58,7 +58,7 @@ def extract_doc(req: ExtractRequest, current_user=Depends(get_current_user), db:
     doc.status = "extracted"
     db.commit()
     
-    push_entities_to_index(document_id=doc.id, extracted=extracted)
+    background_tasks.add_task(push_entities_to_index, document_id=doc.id, extracted=extracted)
 
     similar_cases = []
     try:
