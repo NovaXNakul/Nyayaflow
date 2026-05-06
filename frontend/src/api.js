@@ -5,7 +5,7 @@ const getBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  return "http://localhost:8000";
+  return "";
 };
 
 const api = axios.create({
@@ -89,7 +89,7 @@ export const resetPassword = async (token, new_password) => {
 //
 
 export const fetchUsers = async () => {
-  const response = await api.get("/users");
+  const response = await api.get("/auth/users");
   return response.data;
 };
 
@@ -214,7 +214,9 @@ export const askChat = async (id, question, language = "English") => {
 };
 
 export const translateCase = async (id, language) => {
-  const response = await api.post(`/translate/${id}`, { language });
+  const response = await api.get(`/translate/${id}`, {
+    params: { language },
+  });
   return response.data;
 };
 

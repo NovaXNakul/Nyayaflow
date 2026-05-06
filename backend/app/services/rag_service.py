@@ -32,22 +32,61 @@ from sentence_transformers import CrossEncoder, SentenceTransformer
 logger = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# MODELS  (loaded once at import — never inside functions)
+# LAZY-LOADED MODELS
 # ══════════════════════════════════════════════════════════════════════════════
 
-BI_ENCODER = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
-RERANKER   = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+_bi_encoder = None
+_reranker = None
+
+def get_bi_encoder():
+    global _bi_encoder
+    if _bi_encoder is None:
+        print("Loading SentenceTransformer model...")
+        try:
+            _bi_encoder = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+        except Exception as e:
+            logger.error(f"Model loading failed: {e}")
+            raise
+    return _bi_encoder
+
+def get_reranker():
+    global _reranker
+    if _reranker is None:
+        print("Loading CrossEncoder reranker...")
+        try:
+            _reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+        except Exception as e:
+            logger.error(f"Reranker loading failed: {e}")
+            raise
+    return _reranker
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CHROMADB
+# LAZY-LOADED CHROMADB
 # ══════════════════════════════════════════════════════════════════════════════
 
-PERSIST_DIR   = os.getenv("CHROMA_DIR", "chroma_db")
-chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
-collection    = chroma_client.get_or_create_collection(
-    name="case_documents",
-    metadata={"hnsw:space": "cosine"},
-)
+_chroma_client = None
+_collection = None
+
+def get_collection():
+    global _chroma_client, _collection
+    if _chroma_client is None:
+        print("Initializing ChromaDB...")
+        try:
+            PERSIST_DIR = os.getenv("CHROMA_DIR", "chroma_db")
+            _chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
+        except Exception as e:
+            logger.error(f"ChromaDB initialization failed: {e}")
+            raise
+    if _collection is None:
+        try:
+            _collection = _chroma_client.get_or_create_collection(
+                name="case_documents",
+                metadata={"hnsw:space": "cosine"},
+            )
+        except Exception as e:
+            logger.error(f"Collection creation failed: {e}")
+            raise
+    return _collection
 
 # ══════════════════════════════════════════════════════════════════════════════
 # IN-MEMORY STORES
@@ -304,7 +343,7 @@ def _embed_query(query: str, entity_mode: bool) -> List[float]:
     Non-entity: average 3 paraphrases for broader semantic coverage.
     """
     if entity_mode:
-        return BI_ENCODER.encode(query, normalize_embeddings=True).tolist()
+        return get_bi_encoder().encode(query, normalize_embeddings=True, batch_size=8, show_progress_bar=False).tolist()
 
     expansions = [
         query,
@@ -312,7 +351,7 @@ def _embed_query(query: str, entity_mode: bool) -> List[float]:
         f"Details related to: {query}",
     ]
     import numpy as np
-    vecs = BI_ENCODER.encode(expansions, normalize_embeddings=True)
+    vecs = get_bi_encoder().encode(expansions, normalize_embeddings=True, batch_size=8, show_progress_bar=False)
     avg  = vecs.mean(axis=0)
     return avg.tolist()
 
@@ -339,7 +378,7 @@ def _keyword_scan(document_id: int, query: str, top_k: int = 15) -> List[Tuple[s
     texts = _chunk_cache.get(document_id)
     if texts is None:
         try:
-            data  = collection.get(where={"document_id": str(document_id)})
+            data  = get_collection().get(where={"document_id": str(document_id)})
             texts = data.get("documents", [])
             _chunk_cache[document_id] = texts
         except Exception as exc:
@@ -376,7 +415,7 @@ def _rerank(
     cands = candidates[:max_pairs]
     try:
         pairs  = [(query, doc) for doc in cands]
-        scores = RERANKER.predict(pairs, show_progress_bar=False)
+        scores = get_reranker().predict(pairs, show_progress_bar=False)
         ranked = sorted(
             zip(cands, scores.tolist()), key=lambda x: x[1], reverse=True
         )
@@ -422,7 +461,7 @@ def retrieve_chunks(
     sem_ranked: List[Tuple[str, float]] = []
     try:
         vec = _embed_query(query, entity_mode)
-        res = collection.query(
+        res = get_collection().query(
             query_embeddings=[vec],
             n_results=min(candidate_pool, 100),
             where={"document_id": str(document_id)},
@@ -502,7 +541,7 @@ def get_document_text_for_summary(document_id: int, max_chars: int = 8000) -> st
     ordered by chunk_id. Used by the summary path in chat.py.
     """
     try:
-        data = collection.get(
+        data = get_collection().get(
             where={"document_id": str(document_id)},
             include=["documents", "metadatas"],
         )
@@ -583,14 +622,14 @@ def index_document(
 
     # PERF-5: Batch embedding
     t_embed   = time.perf_counter()
-    embeds_np = BI_ENCODER.encode(docs, normalize_embeddings=True, show_progress_bar=False)
+    embeds_np = get_bi_encoder().encode(docs, normalize_embeddings=True, batch_size=8, show_progress_bar=False)
     embeds    = embeds_np.tolist()
     logger.info("Batch embedding: %.2fs for %d chunks", time.perf_counter() - t_embed, len(docs))
 
     # Upsert to ChromaDB in batches
     BATCH = 100
     for start in range(0, len(ids), BATCH):
-        collection.upsert(
+        get_collection().upsert(
             ids=ids[start:start + BATCH],
             documents=docs[start:start + BATCH],
             embeddings=embeds[start:start + BATCH],
@@ -613,9 +652,9 @@ def index_document(
 def _purge_document(document_id: int) -> None:
     """Delete all existing chunks for this document_id before re-indexing."""
     try:
-        old = collection.get(where={"document_id": str(document_id)})
+        old = get_collection().get(where={"document_id": str(document_id)})
         if old["ids"]:
-            collection.delete(ids=old["ids"])
+            get_collection().delete(ids=old["ids"])
             logger.info("Purged %d stale chunks for doc %d", len(old["ids"]), document_id)
     except Exception as exc:
         logger.warning("_purge_document non-fatal: %s", exc)
@@ -627,7 +666,7 @@ def _purge_document(document_id: int) -> None:
 def rebuild_bm25_from_chroma(document_id: int) -> bool:
     """Rebuild BM25 + chunk cache from ChromaDB after server restart."""
     try:
-        data  = collection.get(where={"document_id": str(document_id)})
+        data  = get_collection().get(where={"document_id": str(document_id)})
         texts = data.get("documents", [])
         if not texts:
             logger.warning("rebuild_bm25: no chunks in Chroma for doc %d", document_id)
@@ -661,8 +700,8 @@ def update_entity_anchor(document_id: int, extra_entities: Dict) -> None:
     entity_text = "\n".join(entity_lines)
     eid = f"{document_id}_entities"
 
-    embed = BI_ENCODER.encode(entity_text, normalize_embeddings=True).tolist()
-    collection.upsert(
+    embed = get_bi_encoder().encode(entity_text, normalize_embeddings=True, batch_size=8, show_progress_bar=False).tolist()
+    get_collection().upsert(
         ids=[eid],
         documents=[entity_text],
         embeddings=[embed],
@@ -707,7 +746,7 @@ def debug_retrieval(document_id: int, query: str) -> Dict:
     vec = _embed_query(query, entity_mode)
     sem_results: List[Dict] = []
     try:
-        res = collection.query(
+        res = get_collection().query(
             query_embeddings=[vec],
             n_results=10,
             where={"document_id": str(document_id)},
@@ -739,7 +778,7 @@ def debug_retrieval(document_id: int, query: str) -> Dict:
     final_chunks = retrieve_chunks(document_id, query, k=4)
 
     try:
-        total_indexed = len(collection.get(where={"document_id": str(document_id)})["ids"])
+        total_indexed = len(get_collection().get(where={"document_id": str(document_id)})["ids"])
     except Exception:
         total_indexed = -1
 
