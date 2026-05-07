@@ -4,7 +4,7 @@
 
 ### *Transforming Judicial Complexity into Actionable Intelligence*
 
-Harness the power of **Retrieval-Augmented Generation (RAG)** and semantic AI to unlock insights from court judgments at scale. CCMS is a production-grade platform engineered for government agencies, legal departments, and justice systems worldwide.
+Harness the power of **Retrieval-Augmented Generation (RAG)** and semantic AI to unlock insights from court judgments at scale. CCMS is an AI-powered legal intelligence platform designed to help government departments and legal teams transform court judgments into structured, actionable workflows.
 
 </div>
 
@@ -13,7 +13,7 @@ Harness the power of **Retrieval-Augmented Generation (RAG)** and semantic AI to
 ## 📊 Platform Status & Stack Overview
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Production%20Ready-27ae60?style=for-the-badge&logo=checkmark&logoColor=white" alt="Status">
+  <img src="https://img.shields.io/badge/Status-Prototype-blue?style=for-the-badge" alt="Status">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-0.104%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/React-18%2B-61dafb?style=for-the-badge&logo=react&logoColor=white" alt="React">
@@ -30,14 +30,17 @@ Harness the power of **Retrieval-Augmented Generation (RAG)** and semantic AI to
 
 ---
 
-## 🌐 Live Ecosystem & Access
+## 🌐 Live Access
 
-| **Component** | **Status** | **Access Link** |
-|:---|:---:|:---|
-| **🎨 Frontend Dashboard** | ✅ Live | [https://ccms-frontend.vercel.app](https://ccms-frontend.vercel.app) *(demo)* |
-| **⚙️ API Documentation** | ✅ Interactive | [https://ccms-api.render.com/docs](https://ccms-api.render.com/docs) *(Swagger UI)* |
-| **📊 Admin Portal** | ✅ Live | [https://ccms-admin.vercel.app](https://ccms-admin.vercel.app) *(admin demo)* |
-| **🔧 System Health** | 📈 99.9% Uptime | [Status Dashboard](https://status.ccms.ai) *(monitoring)* |
+| Component | Access Link |
+|:---|:---|
+| Frontend Dashboard | https://court-decision-intelligence-system.vercel.app/ |
+| Backend API Docs | https://ccms-backend-kblc.onrender.com/docs |
+| GitHub Repository | https://github.com/Suyog-Repal/court-decision-intelligence-system |
+
+## 🎥 Demo Preview
+
+- Demo Video: [[YouTube Demo Link]](https://youtu.be/imksQs3K2sM?si=OeoyF81kxZBf6MGS)
 
 ---
 
@@ -45,7 +48,7 @@ Harness the power of **Retrieval-Augmented Generation (RAG)** and semantic AI to
 
 ### The Problem We Solve
 
-Judicial systems globally face a critical bottleneck: **court judgments are dense, unstructured documents** that require:
+Government legal departments and judicial workflows often face a critical bottleneck: **court judgments are dense, unstructured documents** that require:
 - ⏱️ **Hours of manual reading** per judgment
 - 🔍 **Complex interpretation** of legal language and directives
 - ⚠️ **High risk of compliance gaps** due to human error
@@ -60,10 +63,10 @@ Judicial systems globally face a critical bottleneck: **court judgments are dens
 
 | **Capability** | **Impact** |
 |:---|:---|
-| **Instant Document Understanding** | Parse 100-page judgments in <5 seconds |
-| **Semantic Case Law Analysis** | Connect judgments to precedents via vector similarity |
+| **Instant Document Understanding** | Rapid parsing of lengthy court judgments |
+| **Semantic Case Law Analysis** | Efficient semantic retrieval of related judgments |
 | **Actionable Task Generation** | Convert legal directives into verified action items |
-| **Compliance Audit Trail** | Generate immutable proof-of-execution records |
+| **Compliance Tracking** | Generate structured compliance tracking records |
 | **Multilingual Processing** | Support English, Hindi, Kannada, and other languages |
 | **Role-Based Intelligence** | Tailored insights for judges, officers, and administrators |
 
@@ -73,21 +76,21 @@ Judicial systems globally face a critical bottleneck: **court judgments are dens
 
 ### 1. **Intelligent RAG Pipeline**
 - **Multi-Stage Retrieval:** Semantic search → Keyword reranking → Context augmentation
-- **Entity Preservation:** Proprietary anchoring ensures critical legal entities (defendant names, amounts, deadlines) are never lost
+- **Entity Preservation:** Context-aware chunking ensures critical legal entities (defendant names, amounts, deadlines) are never lost
 - **Hybrid Chunk Indexing:** Maintains legal context while enabling granular retrieval
 
-### 2. **Production-Grade AI Engine**
+### 2. **Scalable AI Engine**
 - **LLM-Agnostic:** Seamless integration with OpenAI, Groq, Anthropic
-- **Fallback Mechanisms:** Heuristic extraction + LLM backup for 99.9% success rate
+- **Fallback Mechanisms:** Heuristic extraction combined with LLM-assisted processing for improved reliability
 - **Batch Processing:** Asynchronous PDF ingestion with progress tracking
 
-### 3. **Enterprise Security & Compliance**
+### 3. **Security & Compliance**
 - **JWT + Role-Based Access Control:** Granular permission system
 - **End-to-End Encryption:** All documents encrypted at rest and in transit
-- **Audit Logging:** Every action tracked with immutable timestamps
+- **Audit Logging:** Every action tracked with audit timestamps
 - **GDPR/Data Privacy:** Compliant data handling and deletion workflows
 
-### 4. **Cloud-Native Scalability**
+### 4. **Scalable Cloud Architecture**
 - **Async-First Architecture:** Non-blocking API requests using FastAPI + Uvicorn
 - **Distributed Processing:** Celery/background tasks for heavy lifting
 - **CDN-Optimized Frontend:** Vite builds with sub-100ms TTFB
@@ -265,24 +268,24 @@ graph LR
 | **Feature** | **Technical Implementation** | **Business Impact** |
 |:---|:---|:---|
 | **⚖️ Intelligent Judgment Parsing** | LLM + Heuristic hybrid extraction | 95%+ accuracy on complex legal documents |
-| **🔍 Semantic Case Search** | Vector similarity + BM25 hybrid | Find relevant precedents in <500ms |
-| **📊 Automated Report Generation** | RAG + prompt engineering | Generate 10-page reports in <3 seconds |
+| **🔍 Semantic Case Search** | Vector similarity + BM25 hybrid | Efficient semantic retrieval of related judgments |
+| **📊 Automated Report Generation** | RAG + prompt engineering | Generate structured AI-assisted legal reports |
 | **🎯 Legal Entity Recognition** | Named Entity Recognition (NER) | Extract 50+ legal entities per judgment |
 | **⏰ Timeline Extraction** | Temporal parsing + LLM validation | Identify all deadlines and milestones |
 | **✅ Task Assignment** | Judgment directive classification | Auto-assign tasks to responsible departments |
 | **📋 Compliance Tracking** | Task status + audit logging | Real-time compliance dashboard |
 | **🌍 Multilingual Support** | Batch translation + regional LLMs | Support 5+ Indian languages |
 
-### 🔐 Enterprise Security & Access Control
+### 🔐 Security & Access Control
 
 | **Security Layer** | **Implementation** |
 |:---|:---|
 | **Authentication** | JWT with 24-hour rotation + refresh tokens |
 | **Authorization** | Role-Based Access Control (RBAC) with 6 permission levels |
 | **Encryption** | AES-256 at rest + TLS 1.3 in transit |
-| **Audit Trail** | Immutable event logging with tamper detection |
+| **Audit Trail** | Structured event logging and audit tracking |
 | **Compliance** | GDPR, Data Protection Act, IPC Section 67 compliance |
-| **Rate Limiting** | 10K requests/minute per API key |
+| **Rate Limiting** | API rate limiting for abuse prevention |
 
 ### ⚡ Performance Optimizations
 
@@ -290,7 +293,7 @@ graph LR
 |:---|:---|:---|
 | **Model Caching** | In-memory embedding model storage | 50ms inference vs 2s cold load |
 | **Batch Embeddings** | Parallel document processing | 10x faster batch ingestion |
-| **Vector Indexing** | HNSW algorithm in ChromaDB | Sub-100ms retrieval on 1M+ documents |
+| **Vector Indexing** | HNSW algorithm in ChromaDB | Optimized vector retrieval using ChromaDB indexing |
 | **CDN Caching** | Cloudflare + Vercel edge caching | <100ms TTFB for frontend |
 | **Database Indexing** | Strategic PostgreSQL indexes | <50ms query response for metadata |
 | **Lazy Loading** | Frontend code-splitting with Vite | Initial load <1.5 seconds |
@@ -327,7 +330,7 @@ graph LR
 ```
 ┌──────────────────────────────────┐
 │   LLM Integration                │
-│   ├─ Groq (Ultra-fast inference) │
+│   ├─ Groq (LLM inference)        │
 │   ├─ OpenAI (GPT-4 capability)   │
 │   ├─ Anthropic (Claude)          │
 │   └─ Ollama (Local inference)    │
@@ -336,7 +339,7 @@ graph LR
 │   ├─ SentenceTransformers        │
 │   ├─ BGE-base-en-v1.5            │
 │   ├─ ChromaDB (vector store)     │
-│   └─ Qdrant (future scale)       │
+│   └─ Qdrant (planned integration)│
 │                                  │
 │   Document Processing            │
 │   ├─ PyMuPDF (fast PDF parsing)  │
@@ -389,7 +392,7 @@ graph LR
 
 ---
 
-## 📂 Project Structure: Enterprise Organization
+## 📂 Project Structure
 
 ```
 court-decision-intelligence-system/
@@ -507,7 +510,7 @@ court-decision-intelligence-system/
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/yourusername/court-decision-intelligence-system.git
+git clone https://github.com/Suyog-Repal/court-decision-intelligence-system.git
 cd court-decision-intelligence-system
 ```
 
@@ -697,31 +700,11 @@ SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 ## 📡 API Documentation: Core Endpoints
 
-### **Authentication Endpoints**
+For the full API reference, see [docs/API_SPECIFICATION.md](./docs/API_SPECIFICATION.md).
 
-#### 1. User Registration
-```http
-POST /api/v1/auth/register
-Content-Type: application/json
+### **Authentication**
 
-{
-  "email": "officer@example.com",
-  "password": "SecurePassword123!",
-  "full_name": "John Doe",
-  "role": "officer"
-}
-
-Response: 201 Created
-{
-  "user_id": "uuid-12345",
-  "email": "officer@example.com",
-  "role": "officer",
-  "access_token": "eyJhbGciOiJIUzI1NiI...",
-  "token_type": "bearer"
-}
-```
-
-#### 2. User Login
+#### Login
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
@@ -734,19 +717,13 @@ Content-Type: application/json
 Response: 200 OK
 {
   "access_token": "eyJhbGciOiJIUzI1NiI...",
-  "token_type": "bearer",
-  "user": {
-    "id": "uuid-12345",
-    "email": "officer@example.com",
-    "role": "officer",
-    "permissions": ["read:cases", "create:tasks"]
-  }
+  "token_type": "bearer"
 }
 ```
 
-### **Document Processing Endpoints**
+### **Document Processing**
 
-#### 3. Upload & Process PDF
+#### Upload & Process PDF
 ```http
 POST /api/v1/documents/upload
 Authorization: Bearer {access_token}
@@ -762,42 +739,13 @@ Response: 202 Accepted
 {
   "document_id": "doc-uuid-12345",
   "status": "processing",
-  "progress": 0,
-  "estimated_completion": "2024-05-07T15:30:00Z"
+  "progress": 0
 }
 ```
 
-#### 4. Get Document Analysis
-```http
-GET /api/v1/documents/{document_id}/analysis
-Authorization: Bearer {access_token}
+### **RAG Query**
 
-Response: 200 OK
-{
-  "document_id": "doc-uuid-12345",
-  "status": "completed",
-  "extracted_data": {
-    "case_number": "2024/001",
-    "defendant_name": "State of Karnataka",
-    "judgment_date": "2024-04-15",
-    "key_directives": ["Direct department to review within 30 days"],
-    "deadline": "2024-05-15",
-    "responsible_department": "Department of Justice"
-  },
-  "confidence_scores": {
-    "case_number": 0.98,
-    "defendant_name": 0.95,
-    "deadline": 0.87
-  },
-  "source_citations": [
-    {"page": 2, "text": "State of Karnataka...", "relevance": 0.94}
-  ]
-}
-```
-
-### **RAG Query Endpoints**
-
-#### 5. Semantic Case Search
+#### Semantic Case Search
 ```http
 POST /api/v1/search/semantic
 Authorization: Bearer {access_token}
@@ -805,12 +753,7 @@ Content-Type: application/json
 
 {
   "query": "Landmark judgments on constitutional rights",
-  "limit": 10,
-  "filters": {
-    "year_from": 2020,
-    "year_to": 2024,
-    "court": "Supreme Court"
-  }
+  "limit": 10
 }
 
 Response: 200 OK
@@ -819,74 +762,9 @@ Response: 200 OK
     {
       "case_id": "CASE-2023-001",
       "title": "Important Constitutional Rights Decision",
-      "relevance_score": 0.92,
-      "summary": "The court held that...",
-      "link": "/cases/CASE-2023-001"
+      "relevance_score": 0.92
     }
-  ],
-  "total_results": 247,
-  "query_time_ms": 342
-}
-```
-
-#### 6. Generate AI Report
-```http
-POST /api/v1/reports/generate
-Authorization: Bearer {access_token}
-Content-Type: application/json
-
-{
-  "document_id": "doc-uuid-12345",
-  "report_type": "executive_summary",
-  "include_citations": true,
-  "language": "en"
-}
-
-Response: 202 Accepted
-{
-  "report_id": "report-uuid-12345",
-  "status": "generating",
-  "progress": 15,
-  "estimated_completion": "2024-05-07T15:25:00Z"
-}
-
-# Poll for completion
-GET /api/v1/reports/{report_id}
-Response: 200 OK (when complete)
-{
-  "report_id": "report-uuid-12345",
-  "status": "completed",
-  "content": "# Court Decision Analysis\n\n## Case Summary\n...",
-  "file_url": "https://storage.example.com/reports/report-uuid-12345.pdf",
-  "generated_at": "2024-05-07T15:24:30Z"
-}
-```
-
-### **Task Management Endpoints**
-
-#### 7. Create Task from Directive
-```http
-POST /api/v1/tasks
-Authorization: Bearer {access_token}
-Content-Type: application/json
-
-{
-  "document_id": "doc-uuid-12345",
-  "extracted_directive": "Department of Police must file compliance report within 60 days",
-  "assigned_to_department": "Police",
-  "priority": "high",
-  "deadline": "2024-07-06"
-}
-
-Response: 201 Created
-{
-  "task_id": "task-uuid-12345",
-  "status": "pending",
-  "created_at": "2024-05-07T15:20:00Z",
-  "audit_trail": {
-    "created_by": "officer-user-123",
-    "created_from_document": "doc-uuid-12345"
-  }
+  ]
 }
 ```
 
@@ -895,9 +773,9 @@ Response: 201 Created
 ## ⚡ Performance Optimization Architecture
 
 ### 1. **AI Model Optimization**
-- **Model Caching:** SentenceTransformers loaded once in memory (8GB GPU)
-- **Batch Processing:** Group documents for parallel embedding (50x faster)
-- **Quantization:** FP16 inference for 2x speedup with minimal accuracy loss
+- **Model Caching:** SentenceTransformers loaded efficiently in memory
+- **Batch Processing:** Group documents for parallel embedding with improved batch ingestion performance
+- **Quantization:** FP16 inference for optimized inference performance with minimal accuracy loss
 - **Result Caching:** Redis layer for repeated queries
 
 ### 2. **Database Optimization**
@@ -947,7 +825,7 @@ JWT Token Flow:
 - **Immutable Audit Log:** Every action logged with timestamp, user, IP
 - **GDPR Compliance:** Data export/deletion endpoints
 - **Role-Based Access:** Fine-grained permissions per role
-- **Rate Limiting:** 10K requests/minute per API key to prevent abuse
+- **Rate Limiting:** API rate limiting for abuse prevention
 
 ---
 
@@ -1041,7 +919,7 @@ git push origin main
 # - Deploy: Uploads to Vercel edge network
 # - CDN: Cached globally
 
-# 3. Live at: https://ccms-frontend.vercel.app
+# 3. Live at: https://court-decision-intelligence-system.vercel.app/
 ```
 
 ### Backend Deployment (Render)
@@ -1088,63 +966,32 @@ CREATE POLICY "Users can view own documents" ON case_documents
 
 ---
 
-## 🎯 Performance Benchmarks
 
-| **Operation** | **Expected Time** | **Scale** |
-|:---|:---:|:---|
-| PDF Upload & Processing | <5 seconds | 100MB PDF |
-| Semantic Search | <500ms | 1M+ vectors |
-| Report Generation | <3 seconds | 10-20 page report |
-| API Response Time | <200ms | 95th percentile |
-| Frontend Initial Load | <1.5 seconds | 4G network |
-| Database Query | <50ms | Complex JOIN |
-
----
 
 ## 🗺️ Future Roadmap
 
-### Phase 1: Core Intelligence
-- [x] PDF ingestion & parsing
-- [x] RAG pipeline implementation
-- [x] Basic semantic search
-- [x] Role-based access control
+### AI & Retrieval Enhancements
+- Hybrid retrieval with reranking and citation-grounded responses
+- Improved semantic retrieval using vectorless and sparse retrieval techniques
+- Retrieval evaluation metrics such as Recall@K, citation accuracy, and hallucination reduction
+- Advanced legal knowledge graphs for precedent and entity linking
 
-### Phase 2: Advanced AI 
-- [ ] Legal citation generation
-- [ ] AI-powered precedent recommendations
-- [ ] Multi-document correlation analysis
-- [ ] Advanced NER for legal entities
+### Scalability & Infrastructure
+- Transition towards microservices-based architecture
+- Distributed task processing using Celery and Redis
+- Redis-based caching for retrieval and repeated queries
+- Cloud object storage integration (S3/GCS) with CDN delivery
 
-### Phase 3: Enterprise Scaling 
-- [ ] Kubernetes deployment (EKS/AKS)
-- [ ] Vector database optimization (Qdrant)
-- [ ] Advanced analytics dashboard
-- [ ] Legal analytics with trend detection
+### Government & Legal Workflow Expansion
+- Human-in-the-loop verification for sensitive compliance decisions
+- Expanded multilingual support for Indian regional legal documents
+- Offline-capable deployments for secure government environments
+- Advanced compliance monitoring and deadline tracking workflows
 
-### Phase 4: Global Expansion 
-- [ ] Multilingual support (10+ languages)
-- [ ] Federated search across jurisdictions
-- [ ] OCR for scanned documents
-- [ ] AWS/GCP migration capability
-
-### Phase 5: AI Autonomy 
-- [ ] Autonomous task execution
-- [ ] Predictive compliance alerts
-- [ ] Legal outcome prediction
-- [ ] Integration with government systems
-
----
-
-## 📊 Metrics & KPIs
-
-| **Metric** | **Target** | **Current** |
-|:---|:---:|:---:|
-| Document Processing Accuracy | 95%+ | 93% |
-| Average Response Time | <200ms | 145ms |
-| System Uptime | 99.9% | 99.95% |
-| PDF Parsing Success Rate | 98%+ | 97.2% |
-| Semantic Search Precision | 90%+ | 88% |
-
+### Security & Observability
+- Fine-grained RBAC and audit logging
+- Monitoring and observability using Prometheus/Grafana
+- Enhanced compliance-grade security controls
 ---
 
 ## 🤝 Contributing to CCMS
@@ -1218,7 +1065,7 @@ git push origin feature/your-feature-name
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **[API Specification](./docs/API_SPECIFICATION.md)** - Complete API reference
 - **[Architecture Guide](./docs/ARCHITECTURE.md)** - System design deep-dive
@@ -1227,215 +1074,21 @@ git push origin feature/your-feature-name
 
 ---
 
-## 📜 License & Legal
+## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE) file for details.
-
-```
-Copyright (c) 2024 Court Decision Intelligence System Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software...
-```
-
----
-
-## 🙏 Acknowledgments
-
-- **Legal Framework:** Based on best practices from [Indian Legal System](https://indiankanoon.org)
-- **AI Models:** Built with [SentenceTransformers](https://www.sbert.net/), [ChromaDB](https://www.trychroma.com/)
-- **Infrastructure:** Powered by [Supabase](https://supabase.com), [Render](https://render.com), [Vercel](https://vercel.com)
-- **Community:** Thanks to all contributors and advisors
-
----
-
-## ❓ FAQ
-
-**Q: Can CCMS work offline?**
-A: The frontend works offline with cached data. Backend requires internet for LLM API calls.
-
-**Q: What's the maximum PDF size supported?**
-A: Currently 50MB per document. Larger documents can be split before upload.
-
-**Q: How are user documents secured?**
-A: AES-256 encryption at rest, TLS 1.3 in transit, with Row-Level Security (RLS) policies.
-
-**Q: Can I deploy CCMS on-premises?**
-A: Yes! Deploy backend on your servers, use local Ollama for LLMs, self-hosted PostgreSQL.
-
-**Q: What LLMs are supported?**
-A: Groq (recommended), OpenAI, Anthropic Claude, and local Ollama models.
 
 ---
 
 <div align="center">
 
-### 🌟 If CCMS helps you, please consider starring the repository! ⭐
+Built for the AI for Bharat Hackathon — Theme 11: From Court Judgments to Verified Action Plans.
 
-Built with ❤️ for the pursuit of justice and governance excellence.
-
-[**View on GitHub**](https://github.com/yourorg/ccms) · [**Live Demo**](https://ccms-frontend.vercel.app) · [**API Docs**](https://ccms-api.render.com/docs)
+[**View on GitHub**](https://github.com/Suyog-Repal/court-decision-intelligence-system)
 
 </div>
 
 ---
 
-**Last Updated:** May 7, 2024  
-**Version:** 1.0.0 | [Changelog](./CHANGELOG.md) | [Roadmap](./ROADMAP.md)
-    FastAPI <--> SQLAlchemy
-    SQLAlchemy <--> PostgreSQL
-    FastAPI <--> RAGPipeline
-    RAGPipeline <--> SentenceTransformers
-    RAGPipeline <--> ChromaDB
-    RAGPipeline <--> LLM
-```
-
----
-
-## 🧠 RAG Pipeline Flow
-
-```mermaid
-graph LR
-    PDF[PDF Judgment] --> Extract[Text Extraction - PyMuPDF]
-    Extract --> Chunk[Intelligent Chunking]
-    Chunk --> Embed[Embedding Generation - SentenceTransformers]
-    Embed --> Store[ChromaDB Storage]
-    Store --> Retrieve[Semantic Retrieval]
-    Retrieve --> Context[Context Construction]
-    Context --> AI[AI Analysis - LLM]
-    AI --> Summary[Actionable Report & Summary]
-```
-
----
-
-## 📂 Project Structure
-
-```text
-├── backend/
-│   ├── app/
-│   │   ├── core/           # Configuration and Security
-│   │   ├── database/       # Connection and Session management
-│   │   ├── models/         # SQLAlchemy ORM models
-│   │   ├── routes/         # API Endpoints (Auth, Upload, Cases)
-│   │   ├── schemas/        # Pydantic data validation
-│   │   └── services/       # RAG, Extraction, and Email logic
-│   ├── chroma_db/          # Persistent Vector Store
-│   ├── reports/            # Generated PDF summaries
-│   └── main.py             # Application entry point
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # Reusable UI elements
-│   │   ├── pages/          # Dashboard, Login, Case Views
-│   │   ├── context/        # Auth and Theme state
-│   │   └── api.js          # Centralized API service
-└── README.md
-```
-
----
-
-## 🛠️ Local Development Setup
-
-### 1. Prerequisites
-*   Python 3.9+
-*   Node.js 18+
-*   PostgreSQL Instance (or Supabase)
-
-### 2. Backend Installation
-```bash
-# Clone the repository
-git clone https://github.com/Suyog-Repal/court-decision-intelligence-system.git
-cd court-decision-intelligence-system/backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the server
-uvicorn app.main:app --reload
-```
-
-### 3. Frontend Installation
-```bash
-cd ../frontend
-
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-```
-
----
-
-## 🔑 Environment Variables
-
-Create a `.env` file in the `backend` directory:
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/ccms
-JWT_SECRET=your_super_secret_key_here
-GROQ_API_KEY=gsk_your_key_here
-OPENAI_API_KEY=sk-your_key_here
-RESEND_API_KEY=re_your_key_here
-```
-
----
-
-## 📡 API Overview
-
-| Endpoint | Method | Description |
-| :--- | :--- | :--- |
-| `/auth/login` | `POST` | Authenticate user and return JWT. |
-| `/upload` | `POST` | Process and index legal PDF documents. |
-| `/extract` | `POST` | Run AI-driven extraction on indexed text. |
-| `/verify` | `POST` | Approve or edit AI-generated insights. |
-| `/dashboard` | `GET` | Retrieve case analytics and task statuses. |
-| `/chat` | `POST` | RAG-powered legal assistant for specific cases. |
-| `/tasks` | `GET` | Manage actionable steps generated from judgments. |
-
----
-
-## 🛡️ Security & Performance
-
-*   **Authentication:** Multi-layered JWT strategy with encrypted cookies.
-*   **Role-Based Access:** Granular permissions (Admin can invite users, Officers can process cases).
-*   **Lazy Loading:** AI models are loaded on-demand to optimize memory usage in cloud environments.
-*   **Batched Inference:** Embedding generation is batched for high-throughput document processing.
-*   **Async APIs:** Fully non-blocking FastAPI implementation for maximum concurrency.
-
----
-
-## 🔮 Future Roadmap
-
-*   [ ] **Multilingual Legal AI:** Full support for 22 Indian regional languages.
-*   [ ] **OCR Integration:** Support for scanned/handwritten legal documents.
-*   [ ] **Citation Engine:** Automated cross-referencing with Indian Kanoon API.
-*   [ ] **Mobile App:** Flutter-based mobile dashboard for on-the-go legal officers.
-
----
-
-## 👥 Contributors
-
-*   **Suyog Repal** - *Lead Architect & AI Engineer* - [GitHub](https://github.com/Suyog-Repal)
-*   **Team Member Name** - *Role* - [GitHub](https://github.com/username)
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-<p align="center">
-  <b>If you find this project useful, please give it a ⭐ on GitHub!</b>
-</p>
-<p align="center">
-  Built with ❤️ for AI for Bharat
-</p>
+**Last Updated:** May 7, 2026  
+**Version:** 1.0.0
