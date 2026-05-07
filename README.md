@@ -350,21 +350,21 @@ graph LR
 ```
 ┌──────────────────────────────────┐
 │   PostgreSQL 15+ / Supabase      │
-│   ├─ Users & Auth               │
-│   ├─ Case Metadata              │
-│   ├─ Reports & Tasks            │
-│   ├─ Audit Logs                 │
-│   └─ Full-text search indexes   │
+│   ├─ Users & Auth                │
+│   ├─ Case Metadata               │
+│   ├─ Reports & Tasks             │
+│   ├─ Audit Logs                  │
+│   └─ Full-text search indexes    │ 
 │                                  │
 │   ChromaDB (Vector Database)     │
-│   ├─ Embeddings Storage         │
-│   ├─ Semantic Indexing          │
-│   └─ Hybrid Search Support      │
+│   ├─ Embeddings Storage          │
+│   ├─ Semantic Indexing           │
+│   └─ Hybrid Search Support       │
 │                                  │
 │   Cloud Storage                  │
-│   ├─ Supabase Storage (S3)      │
-│   ├─ PDF Archives              │
-│   └─ Generated Reports         │
+│   ├─ Supabase Storage (S3)       │
+│   ├─ PDF Archives                │ 
+│   └─ Generated Reports           │
 └──────────────────────────────────┘
 ```
 
@@ -372,18 +372,18 @@ graph LR
 ```
 ┌──────────────────────────────────┐
 │   Frontend Deployment            │
-│   └─ Vercel (Edge functions)    │
+│   └─ Vercel (Edge functions)     │
 │                                  │
 │   Backend Deployment             │
-│   └─ Render (Container hosting) │
+│   └─ Render (Container hosting)  │
 │                                  │
 │   Database Hosting               │
-│   └─ Supabase (Postgres + Auth) │
+│   └─ Supabase (Postgres + Auth)  │
 │                                  │
 │   Monitoring & Observability     │
-│   ├─ Sentry (Error tracking)    │
-│   ├─ DataDog (Performance)      │
-│   └─ CloudWatch (Logs)          │
+│   ├─ Sentry (Error tracking)     │
+│   ├─ DataDog (Performance)       │
+│   └─ CloudWatch (Logs)           │
 └──────────────────────────────────┘
 ```
 
@@ -1103,31 +1103,31 @@ CREATE POLICY "Users can view own documents" ON case_documents
 
 ## 🗺️ Future Roadmap
 
-### Phase 1: Core Intelligence (Q2 2024) ✅
+### Phase 1: Core Intelligence
 - [x] PDF ingestion & parsing
 - [x] RAG pipeline implementation
 - [x] Basic semantic search
 - [x] Role-based access control
 
-### Phase 2: Advanced AI (Q3 2024) 🚀
+### Phase 2: Advanced AI 
 - [ ] Legal citation generation
 - [ ] AI-powered precedent recommendations
 - [ ] Multi-document correlation analysis
 - [ ] Advanced NER for legal entities
 
-### Phase 3: Enterprise Scaling (Q4 2024)
+### Phase 3: Enterprise Scaling 
 - [ ] Kubernetes deployment (EKS/AKS)
 - [ ] Vector database optimization (Qdrant)
 - [ ] Advanced analytics dashboard
 - [ ] Legal analytics with trend detection
 
-### Phase 4: Global Expansion (2025)
+### Phase 4: Global Expansion 
 - [ ] Multilingual support (10+ languages)
 - [ ] Federated search across jurisdictions
 - [ ] OCR for scanned documents
 - [ ] AWS/GCP migration capability
 
-### Phase 5: AI Autonomy (2025+)
+### Phase 5: AI Autonomy 
 - [ ] Autonomous task execution
 - [ ] Predictive compliance alerts
 - [ ] Legal outcome prediction
@@ -1178,35 +1178,43 @@ git push origin feature/your-feature-name
 
 ---
 
-## 👥 Team & Contributors
+## 👥 Contributors
 
 <table>
   <tr>
+    <th align="center">Name</th>
+    <th align="center">GitHub</th>
+  </tr>
+
+  <tr>
+    <td align="center">Suyog Repal</td>
     <td align="center">
-      <a href="https://github.com/suyogrepal">
-        <img src="https://avatars.githubusercontent.com/u/suyogrepal?v=4" width="80px;" alt=""/><br />
-        <sub><b>Suyog Repal</b></sub>
-      </a><br />
-      <a href="https://github.com/suyogrepal" title="Creator">👨‍💻 Creator & Lead Developer</a>
+      <a href="https://github.com/suyog-repal">@suyog-repal</a>
     </td>
+  </tr>
+
+  <tr>
+    <td align="center">Abhigyan Jha</td>
     <td align="center">
-      <a href="https://github.com">
-        <img src="https://ui-avatars.com/api/?name=Team+Member&background=random" width="80px;" alt=""/><br />
-        <sub><b>Team Member</b></sub>
-      </a><br />
-      <a href="https://github.com" title="Contributor">👨‍💼 Legal Expert</a>
+      <a href="https://github.com/Abhigyan-j">@Abhigyan-j</a>
     </td>
+  </tr>
+
+  <tr>
+    <td align="center">Nakul Sonkusare</td>
     <td align="center">
-      <a href="https://github.com">
-        <img src="https://ui-avatars.com/api/?name=AI+Lead&background=random" width="80px;" alt=""/><br />
-        <sub><b>AI Lead</b></sub>
-      </a><br />
-      <a href="https://github.com" title="Contributor">🧠 ML Engineer</a>
+      <a href="https://github.com/NovaXNakul">@NovaXNakul</a>
+    </td>
+  </tr>
+
+  <tr>
+    <td align="center">Raj Mathuria</td>
+    <td align="center">
+      <a href="https://github.com/codecraftsmanraj">@CodeCraftsmanRaj</a>
     </td>
   </tr>
 </table>
 
-**Want to join the team?** We're hiring! Send your resume and GitHub profile to careers@ccms.ai
 
 ---
 
